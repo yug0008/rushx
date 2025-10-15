@@ -1,766 +1,504 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
-import Layout from '../../components/Layout'
 import { 
   FaBell, 
-  FaPlus, 
-  FaEdit, 
-  FaTrash, 
-  FaSearch,
-  FaFilter,
+  FaPaperPlane, 
   FaUsers,
-  FaUser,
-  FaGlobe,
-  FaPaperPlane,
+  FaCheckCircle,
   FaExclamationTriangle,
   FaInfoCircle,
-  FaCheckCircle,
   FaGamepad,
   FaTrophy,
-  FaEye,
-  FaEyeSlash
+  FaUser,
+  FaEnvelope
 } from 'react-icons/fa'
 import { GiTrophyCup } from 'react-icons/gi'
 
-const AdminNotifications = () => {
-  const { user, isAdmin } = useAuth()
-  const [notifications, setNotifications] = useState([])
+const AdminNotificationsPage = () => {
+  const { user, isAdmin, loading: authLoading } = useAuth()
   const [users, setUsers] = useState([])
   const [tournaments, setTournaments] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [editingNotification, setEditingNotification] = useState(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filters, setFilters] = useState({
-    type: 'all',
-    audience: 'all',
-    readStatus: 'all'
+  const [sending, setSending] = useState(false)
+  const [notificationStats, setNotificationStats] = useState({
+    total: 0,
+    unread: 0,
+    sentToday: 0
+  })
+
+  // Notification form state
+  const [notificationForm, setNotificationForm] = useState({
+    title: '',
+    message: '',
+    type: 'info',
+    targetUsers: 'all', // 'all', 'selected', 'tournament_participants'
+    selectedUserIds: [],
+    relatedTournamentId: ''
   })
 
   useEffect(() => {
-    if (user && isAdmin) {
-      fetchData()
+    if (!authLoading && user) {
+      if (!isAdmin) {
+        window.location.href = '/'
+        return
+      }
+      loadData()
     }
-  }, [user, isAdmin])
+  }, [user, isAdmin, authLoading])
 
-  const fetchData = async () => {
+  const loadData = async () => {
     try {
-      const [
-        { data: notificationsData },
-        { data: usersData },
-        { data: tournamentsData }
-      ] = await Promise.all([
-        supabase
-          .from('notifications')
-          .select(`
-            *,
-            user:profiles!user_id(username, email),
-            tournament:related_tournament_id(title, slug)
-          `)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('profiles')
-          .select('id, username, email, created_at')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('tournaments')
-          .select('id, title, slug, status')
-          .order('created_at', { ascending: false })
-      ])
+      setLoading(true)
+      
+      // Load users
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, username, email, created_at')
+        .order('created_at', { ascending: false })
 
-      setNotifications(notificationsData || [])
+      if (usersError) throw usersError
+
+      // Load tournaments
+      const { data: tournamentsData, error: tournamentsError } = await supabase
+        .from('tournaments')
+        .select('id, title, slug')
+        .order('created_at', { ascending: false })
+
+      if (tournamentsError) throw tournamentsError
+
+      // Load notification stats
+      const { data: notificationsData, error: notificationsError } = await supabase
+        .from('notifications')
+        .select('*')
+
+      if (notificationsError) throw notificationsError
+
+      const today = new Date().toISOString().split('T')[0]
+      const sentToday = notificationsData.filter(notif => 
+        notif.created_at.split('T')[0] === today
+      ).length
+
+      setNotificationStats({
+        total: notificationsData.length,
+        unread: notificationsData.filter(notif => !notif.read).length,
+        sentToday
+      })
+
       setUsers(usersData || [])
       setTournaments(tournamentsData || [])
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error('Error loading data:', error)
+      alert('Error loading data: ' + error.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleCreateNotification = async (notificationData) => {
+  const handleInputChange = (field, value) => {
+    setNotificationForm(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const handleUserSelection = (userId) => {
+    setNotificationForm(prev => {
+      const isSelected = prev.selectedUserIds.includes(userId)
+      return {
+        ...prev,
+        selectedUserIds: isSelected
+          ? prev.selectedUserIds.filter(id => id !== userId)
+          : [...prev.selectedUserIds, userId]
+      }
+    })
+  }
+
+  const selectAllUsers = () => {
+    setNotificationForm(prev => ({
+      ...prev,
+      selectedUserIds: users.map(user => user.id)
+    }))
+  }
+
+  const clearUserSelection = () => {
+    setNotificationForm(prev => ({
+      ...prev,
+      selectedUserIds: []
+    }))
+  }
+
+  const sendNotification = async () => {
+    if (!notificationForm.title.trim() || !notificationForm.message.trim()) {
+      alert('Please fill in both title and message')
+      return
+    }
+
+    if (notificationForm.targetUsers === 'selected' && notificationForm.selectedUserIds.length === 0) {
+      alert('Please select at least one user')
+      return
+    }
+
+    if (notificationForm.targetUsers === 'tournament_participants' && !notificationForm.relatedTournamentId) {
+      alert('Please select a tournament')
+      return
+    }
+
     try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .insert([notificationData])
-        .select()
+      setSending(true)
 
-      if (error) throw error
-      
-      // If sending to multiple users, create notifications for each
-      if (notificationData.audience === 'multiple' && notificationData.user_ids) {
-        const userNotifications = notificationData.user_ids.map(userId => ({
-          title: notificationData.title,
-          message: notificationData.message,
-          type: notificationData.type,
-          audience: 'individual',
-          user_id: userId,
-          related_tournament_id: notificationData.related_tournament_id,
-          created_by: user.id
-        }))
+      let targetUserIds = []
 
-        await supabase
-          .from('notifications')
-          .insert(userNotifications)
+      if (notificationForm.targetUsers === 'all') {
+        targetUserIds = users.map(user => user.id)
+      } else if (notificationForm.targetUsers === 'selected') {
+        targetUserIds = notificationForm.selectedUserIds
+      } else if (notificationForm.targetUsers === 'tournament_participants') {
+        // You'll need to implement this based on your tournament participants structure
+        // This is a placeholder - adjust according to your schema
+        const { data: participants, error } = await supabase
+          .from('tournament_participants') // Adjust table name as needed
+          .select('user_id')
+          .eq('tournament_id', notificationForm.relatedTournamentId)
+
+        if (error) throw error
+        targetUserIds = participants.map(p => p.user_id)
       }
 
-      fetchData()
-      setShowCreateModal(false)
-    } catch (error) {
-      console.error('Error creating notification:', error)
-      throw error
-    }
-  }
+      // Create notifications for all target users
+      const notifications = targetUserIds.map(userId => ({
+        user_id: userId,
+        title: notificationForm.title,
+        message: notificationForm.message,
+        type: notificationForm.type,
+        related_tournament_id: notificationForm.relatedTournamentId || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }))
 
-  const handleUpdateNotification = async (notificationData) => {
-    try {
       const { error } = await supabase
         .from('notifications')
-        .update(notificationData)
-        .eq('id', editingNotification.id)
+        .insert(notifications)
 
       if (error) throw error
-      
-      fetchData()
-      setEditingNotification(null)
+
+      // Reset form
+      setNotificationForm({
+        title: '',
+        message: '',
+        type: 'info',
+        targetUsers: 'all',
+        selectedUserIds: [],
+        relatedTournamentId: ''
+      })
+
+      // Reload stats
+      await loadData()
+
+      alert(`Successfully sent notification to ${targetUserIds.length} users!`)
     } catch (error) {
-      console.error('Error updating notification:', error)
-      throw error
+      console.error('Error sending notification:', error)
+      alert('Error sending notification: ' + error.message)
+    } finally {
+      setSending(false)
     }
   }
 
-  const handleDeleteNotification = async (notificationId) => {
-    if (!confirm('Are you sure you want to delete this notification?')) return
-
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId)
-
-      if (error) throw error
-      
-      fetchData()
-    } catch (error) {
-      console.error('Error deleting notification:', error)
+  const getNotificationTypeIcon = (type) => {
+    const icons = {
+      info: <FaInfoCircle className="w-5 h-5 text-blue-400" />,
+      success: <FaCheckCircle className="w-5 h-5 text-green-400" />,
+      warning: <FaExclamationTriangle className="w-5 h-5 text-yellow-400" />,
+      match: <FaGamepad className="w-5 h-5 text-purple-400" />,
+      tournament: <GiTrophyCup className="w-5 h-5 text-yellow-400" />
     }
+    return icons[type] || icons.info
   }
 
-  const handleBulkDelete = async (notificationIds) => {
-    if (!confirm(`Are you sure you want to delete ${notificationIds.length} notifications?`)) return
-
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .in('id', notificationIds)
-
-      if (error) throw error
-      
-      fetchData()
-    } catch (error) {
-      console.error('Error bulk deleting notifications:', error)
-    }
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900/30 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-cyan-400 font-semibold">Loading...</p>
+        </div>
+      </div>
+    )
   }
-
-  const getNotificationStats = () => {
-    const total = notifications.length
-    const read = notifications.filter(n => n.read).length
-    const unread = total - read
-    const global = notifications.filter(n => n.audience === 'global').length
-    const individual = notifications.filter(n => n.audience === 'individual').length
-
-    return { total, read, unread, global, individual }
-  }
-
-  const filteredNotifications = notifications.filter(notification => {
-    // Search filter
-    if (searchTerm && !notification.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !notification.message.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !notification.user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !notification.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false
-    }
-
-    // Type filter
-    if (filters.type !== 'all' && notification.type !== filters.type) {
-      return false
-    }
-
-    // Audience filter
-    if (filters.audience !== 'all' && notification.audience !== filters.audience) {
-      return false
-    }
-
-    // Read status filter
-    if (filters.readStatus !== 'all') {
-      if (filters.readStatus === 'read' && !notification.read) return false
-      if (filters.readStatus === 'unread' && notification.read) return false
-    }
-
-    return true
-  })
-
-  const stats = getNotificationStats()
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900/30 pt-20 flex items-center justify-center">
         <div className="text-center">
-          <FaExclamationTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">Admin privileges required to access this page.</p>
+          <FaExclamationTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
+          <p className="text-gray-400">You don't have permission to access this page.</p>
         </div>
       </div>
     )
   }
 
   return (
-    
-      <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900/30 pt-20">
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Notifications Management</h1>
-            <p className="text-gray-600">Manage and send notifications to users</p>
+        <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center space-x-4 mb-4 lg:mb-0">
+              <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <FaBell className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Admin Notifications</h1>
+                <p className="text-cyan-400">Send notifications to users</p>
+              </div>
+            </div>
           </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
-          >
-            <FaPlus className="w-4 h-4" />
-            <span>Create Notification</span>
-          </button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          <StatCard
-            title="Total Notifications"
-            value={stats.total}
-            icon={FaBell}
-            color="blue"
-          />
-          <StatCard
-            title="Unread"
-            value={stats.unread}
-            icon={FaEyeSlash}
-            color="yellow"
-          />
-          <StatCard
-            title="Read"
-            value={stats.read}
-            icon={FaEye}
-            color="green"
-          />
-          <StatCard
-            title="Global"
-            value={stats.global}
-            icon={FaGlobe}
-            color="purple"
-          />
-          <StatCard
-            title="Individual"
-            value={stats.individual}
-            icon={FaUser}
-            color="cyan"
-          />
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Total Notifications</p>
+                <p className="text-3xl font-bold text-white">{notificationStats.total}</p>
+              </div>
+              <FaEnvelope className="w-8 h-8 text-cyan-400" />
+            </div>
+          </div>
+          
+          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Unread Notifications</p>
+                <p className="text-3xl font-bold text-white">{notificationStats.unread}</p>
+              </div>
+              <FaBell className="w-8 h-8 text-yellow-400" />
+            </div>
+          </div>
+          
+          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Sent Today</p>
+                <p className="text-3xl font-bold text-white">{notificationStats.sentToday}</p>
+              </div>
+              <FaPaperPlane className="w-8 h-8 text-green-400" />
+            </div>
+          </div>
         </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-              <div className="relative">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Notification Form */}
+          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
+              <FaPaperPlane className="w-6 h-6 text-cyan-400" />
+              <span>Send Notification</span>
+            </h2>
+
+            <div className="space-y-4">
+              {/* Title */}
+              <div>
+                <label className="block text-gray-300 text-sm font-medium mb-2">
+                  Title *
+                </label>
                 <input
                   type="text"
-                  placeholder="Search notifications..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  value={notificationForm.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                  placeholder="Enter notification title"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-              <select
-                value={filters.type}
-                onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-              >
-                <option value="all">All Types</option>
-                <option value="info">Info</option>
-                <option value="success">Success</option>
-                <option value="warning">Warning</option>
-                <option value="tournament">Tournament</option>
-                <option value="match">Match</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Audience</label>
-              <select
-                value={filters.audience}
-                onChange={(e) => setFilters(prev => ({ ...prev, audience: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-              >
-                <option value="all">All Audience</option>
-                <option value="global">Global</option>
-                <option value="individual">Individual</option>
-                <option value="multiple">Multiple Users</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select
-                value={filters.readStatus}
-                onChange={(e) => setFilters(prev => ({ ...prev, readStatus: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-              >
-                <option value="all">All Status</option>
-                <option value="read">Read</option>
-                <option value="unread">Unread</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Notifications Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Notification
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Audience
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredNotifications.map((notification) => (
-                  <NotificationRow
-                    key={notification.id}
-                    notification={notification}
-                    onEdit={setEditingNotification}
-                    onDelete={handleDeleteNotification}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredNotifications.length === 0 && (
-            <div className="text-center py-12">
-              <FaBell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No notifications found</h3>
-              <p className="text-gray-500">Try adjusting your search or filters</p>
-            </div>
-          )}
-        </div>
-
-        {/* Modals */}
-        {showCreateModal && (
-          <NotificationModal
-            onClose={() => setShowCreateModal(false)}
-            onSave={handleCreateNotification}
-            users={users}
-            tournaments={tournaments}
-            currentUser={user}
-          />
-        )}
-
-        {editingNotification && (
-          <NotificationModal
-            notification={editingNotification}
-            onClose={() => setEditingNotification(null)}
-            onSave={handleUpdateNotification}
-            users={users}
-            tournaments={tournaments}
-            currentUser={user}
-            isEditing
-          />
-        )}
-      </div>
-    
-  )
-}
-
-const NotificationRow = ({ notification, onEdit, onDelete }) => {
-  const getTypeIcon = (type) => {
-    const icons = {
-      info: <FaInfoCircle className="w-4 h-4 text-blue-500" />,
-      success: <FaCheckCircle className="w-4 h-4 text-green-500" />,
-      warning: <FaExclamationTriangle className="w-4 h-4 text-yellow-500" />,
-      tournament: <GiTrophyCup className="w-4 h-4 text-purple-500" />,
-      match: <FaGamepad className="w-4 h-4 text-indigo-500" />
-    }
-    return icons[type] || icons.info
-  }
-
-  const getAudienceIcon = (audience) => {
-    const icons = {
-      global: <FaGlobe className="w-4 h-4 text-gray-500" />,
-      individual: <FaUser className="w-4 h-4 text-blue-500" />,
-      multiple: <FaUsers className="w-4 h-4 text-green-500" />
-    }
-    return icons[audience] || icons.individual
-  }
-
-  return (
-    <tr className="hover:bg-gray-50">
-      <td className="px-6 py-4">
-        <div className="flex items-start space-x-3">
-          {getTypeIcon(notification.type)}
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-gray-900 truncate">
-              {notification.title}
-            </div>
-            <div className="text-sm text-gray-500 truncate">
-              {notification.message}
-            </div>
-            {notification.user && (
-              <div className="text-xs text-gray-400">
-                To: {notification.user.username || notification.user.email}
-              </div>
-            )}
-            {notification.tournament && (
-              <div className="text-xs text-cyan-600">
-                Tournament: {notification.tournament.title}
-              </div>
-            )}
-          </div>
-        </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="flex items-center space-x-2">
-          {getAudienceIcon(notification.audience)}
-          <span className="text-sm text-gray-900 capitalize">{notification.audience}</span>
-        </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
-          notification.type === 'success' ? 'bg-green-100 text-green-800' :
-          notification.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-          notification.type === 'info' ? 'bg-blue-100 text-blue-800' :
-          'bg-purple-100 text-purple-800'
-        }`}>
-          {notification.type}
-        </span>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          notification.read 
-            ? 'bg-gray-100 text-gray-800' 
-            : 'bg-cyan-100 text-cyan-800'
-        }`}>
-          {notification.read ? 'Read' : 'Unread'}
-        </span>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {new Date(notification.created_at).toLocaleDateString()}
-        <div className="text-xs text-gray-400">
-          {new Date(notification.created_at).toLocaleTimeString()}
-        </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-        <button
-          onClick={() => onEdit(notification)}
-          className="text-cyan-600 hover:text-cyan-900 transition-colors duration-200"
-        >
-          <FaEdit className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => onDelete(notification.id)}
-          className="text-red-600 hover:text-red-900 transition-colors duration-200"
-        >
-          <FaTrash className="w-4 h-4" />
-        </button>
-      </td>
-    </tr>
-  )
-}
-
-const NotificationModal = ({ 
-  notification, 
-  onClose, 
-  onSave, 
-  users, 
-  tournaments, 
-  currentUser,
-  isEditing = false 
-}) => {
-  const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    title: '',
-    message: '',
-    type: 'info',
-    audience: 'global',
-    user_id: null,
-    user_ids: [],
-    related_tournament_id: null
-  })
-
-  useEffect(() => {
-    if (notification) {
-      setFormData({
-        title: notification.title || '',
-        message: notification.message || '',
-        type: notification.type || 'info',
-        audience: notification.audience || 'global',
-        user_id: notification.user_id || null,
-        user_ids: notification.user_ids || [],
-        related_tournament_id: notification.related_tournament_id || null
-      })
-    }
-  }, [notification])
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-
-    try {
-      const submitData = {
-        ...formData,
-        created_by: currentUser.id
-      }
-
-      // Clean up data based on audience
-      if (submitData.audience === 'global') {
-        submitData.user_id = null
-        submitData.user_ids = []
-      } else if (submitData.audience === 'individual') {
-        submitData.user_ids = []
-      }
-
-      await onSave(submitData)
-    } catch (error) {
-      console.error('Error saving notification:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-
-  const handleUserSelect = (userId) => {
-    if (formData.audience === 'multiple') {
-      const updatedUserIds = formData.user_ids.includes(userId)
-        ? formData.user_ids.filter(id => id !== userId)
-        : [...formData.user_ids, userId]
-      handleChange('user_ids', updatedUserIds)
-    } else {
-      handleChange('user_id', userId)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {isEditing ? 'Edit Notification' : 'Create New Notification'}
-          </h2>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Title *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.title}
-                onChange={(e) => handleChange('title', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                placeholder="Enter notification title"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Message *
-              </label>
-              <textarea
-                required
-                rows={4}
-                value={formData.message}
-                onChange={(e) => handleChange('message', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                placeholder="Enter notification message"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+              {/* Message */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Type *
+                <label className="block text-gray-300 text-sm font-medium mb-2">
+                  Message *
+                </label>
+                <textarea
+                  value={notificationForm.message}
+                  onChange={(e) => handleInputChange('message', e.target.value)}
+                  rows="4"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                  placeholder="Enter notification message"
+                />
+              </div>
+
+              {/* Type */}
+              <div>
+                <label className="block text-gray-300 text-sm font-medium mb-2">
+                  Type
                 </label>
                 <select
-                  value={formData.type}
-                  onChange={(e) => handleChange('type', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  value={notificationForm.type}
+                  onChange={(e) => handleInputChange('type', e.target.value)}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
                 >
                   <option value="info">Information</option>
                   <option value="success">Success</option>
                   <option value="warning">Warning</option>
+                  <option value="match">Match Update</option>
                   <option value="tournament">Tournament</option>
-                  <option value="match">Match</option>
                 </select>
               </div>
 
+              {/* Target Users */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Audience *
+                <label className="block text-gray-300 text-sm font-medium mb-2">
+                  Target Users
                 </label>
                 <select
-                  value={formData.audience}
-                  onChange={(e) => handleChange('audience', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  value={notificationForm.targetUsers}
+                  onChange={(e) => handleInputChange('targetUsers', e.target.value)}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
                 >
-                  <option value="global">All Users (Global)</option>
-                  <option value="individual">Single User</option>
-                  <option value="multiple">Multiple Users</option>
+                  <option value="all">All Users</option>
+                  <option value="selected">Selected Users</option>
+                  <option value="tournament_participants">Tournament Participants</option>
                 </select>
               </div>
+
+              {/* Tournament Selection (if tournament participants) */}
+              {notificationForm.targetUsers === 'tournament_participants' && (
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    Select Tournament
+                  </label>
+                  <select
+                    value={notificationForm.relatedTournamentId}
+                    onChange={(e) => handleInputChange('relatedTournamentId', e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                  >
+                    <option value="">Select a tournament</option>
+                    {tournaments.map(tournament => (
+                      <option key={tournament.id} value={tournament.id}>
+                        {tournament.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Send Button */}
+              <button
+                onClick={sendNotification}
+                disabled={sending}
+                className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-cyan-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                {sending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  <>
+                    <FaPaperPlane className="w-4 h-4" />
+                    <span>Send Notification</span>
+                  </>
+                )}
+              </button>
             </div>
+          </div>
 
-            {formData.audience === 'individual' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select User *
-                </label>
-                <select
-                  value={formData.user_id || ''}
-                  onChange={(e) => handleChange('user_id', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                >
-                  <option value="">Select a user</option>
+          {/* User Selection & Preview */}
+          <div className="space-y-6">
+            {/* User Selection */}
+            {notificationForm.targetUsers === 'selected' && (
+              <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-white flex items-center space-x-2">
+                    <FaUsers className="w-5 h-5 text-cyan-400" />
+                    <span>Select Users</span>
+                  </h3>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={selectAllUsers}
+                      className="px-3 py-1 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/30 transition-colors"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      onClick={clearUserSelection}
+                      className="px-3 py-1 bg-red-500/20 border border-red-500/50 text-red-400 rounded-lg text-sm hover:bg-red-500/30 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="max-h-64 overflow-y-auto space-y-2">
                   {users.map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.username || user.email} ({user.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {formData.audience === 'multiple' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Users *
-                </label>
-                <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-2">
-                  {users.map(user => (
-                    <label key={user.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
+                    <div
+                      key={user.id}
+                      className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50"
+                    >
                       <input
                         type="checkbox"
-                        checked={formData.user_ids.includes(user.id)}
-                        onChange={() => handleUserSelect(user.id)}
-                        className="rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+                        checked={notificationForm.selectedUserIds.includes(user.id)}
+                        onChange={() => handleUserSelection(user.id)}
+                        className="w-4 h-4 text-cyan-500 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
                       />
-                      <span className="text-sm text-gray-700">
-                        {user.username || user.email} ({user.email})
-                      </span>
-                    </label>
+                      <FaUser className="w-4 h-4 text-gray-400" />
+                      <div className="flex-1">
+                        <p className="text-white font-medium">{user.username || 'No username'}</p>
+                        <p className="text-gray-400 text-sm">{user.email}</p>
+                      </div>
+                    </div>
                   ))}
                 </div>
-                <div className="text-sm text-gray-500 mt-1">
-                  Selected: {formData.user_ids.length} users
+                
+                <div className="mt-4 text-cyan-400 text-sm">
+                  Selected: {notificationForm.selectedUserIds.length} users
                 </div>
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Related Tournament (Optional)
-              </label>
-              <select
-                value={formData.related_tournament_id || ''}
-                onChange={(e) => handleChange('related_tournament_id', e.target.value || null)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-              >
-                <option value="">No tournament</option>
-                {tournaments.map(tournament => (
-                  <option key={tournament.id} value={tournament.id}>
-                    {tournament.title} ({tournament.status})
-                  </option>
-                ))}
-              </select>
+            {/* Preview */}
+            <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
+                <FaBell className="w-5 h-5 text-cyan-400" />
+                <span>Preview</span>
+              </h3>
+              
+              {notificationForm.title || notificationForm.message ? (
+                <div className="bg-gray-800/50 rounded-xl border border-cyan-500/30 p-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="mt-1">
+                      {getNotificationTypeIcon(notificationForm.type)}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-white font-semibold text-lg">
+                        {notificationForm.title || 'Notification Title'}
+                      </h4>
+                      <p className="text-gray-300 mt-2">
+                        {notificationForm.message || 'Notification message will appear here...'}
+                      </p>
+                      <div className="text-gray-500 text-sm mt-3">
+                        {new Date().toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-gray-400 py-8">
+                  <FaBell className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>Notification preview will appear here</p>
+                </div>
+              )}
             </div>
           </div>
-
-          <div className="flex justify-end space-x-4 pt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium rounded-lg hover:shadow-lg transition-all duration-200 disabled:opacity-50"
-            >
-              <FaPaperPlane className="w-4 h-4" />
-              <span>{loading ? 'Sending...' : isEditing ? 'Update Notification' : 'Send Notification'}</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-const StatCard = ({ title, value, icon: Icon, color }) => {
-  const colorClasses = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    yellow: 'bg-yellow-500',
-    purple: 'bg-purple-500',
-    cyan: 'bg-cyan-500'
-  }
-
-  return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center">
-        <div className={`p-3 rounded-lg ${colorClasses[color]} bg-opacity-10`}>
-          <Icon className={`w-6 h-6 ${colorClasses[color].replace('bg-', 'text-')}`} />
-        </div>
-        <div className="ml-4">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
         </div>
       </div>
     </div>
   )
 }
 
-export default AdminNotifications
+export default AdminNotificationsPage

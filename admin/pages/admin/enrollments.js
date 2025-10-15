@@ -1,39 +1,37 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
-import Layout from '../../components/Layout'
 import { 
   FaUsers, 
-  FaSearch, 
-  FaFilter, 
-  FaCheck, 
-  FaTimes, 
-  FaEye,
-  FaEdit,
-  FaTrash,
-  FaClock,
+  FaCheckCircle, 
+  FaTimesCircle, 
+  FaEye, 
+  FaSearch,
+  FaFilter,
+  FaSync,
   FaMoneyBillWave,
-  FaTrophy,
-  FaUserCheck,
-  FaUserTimes,
-  FaExclamationTriangle,
+  FaClock,
+  FaUser,
+  FaGamepad,
+  FaPhone,
+  FaMapMarkerAlt,
   FaQrcode,
   FaWhatsapp,
   FaEnvelope,
   FaIdCard,
-  FaMobile,
-  FaMapMarkerAlt
+  FaCalendarAlt
 } from 'react-icons/fa'
+import { GiTrophyCup } from 'react-icons/gi'
+import { IoMdAlert } from 'react-icons/io'
 
-const AdminEnrollments = () => {
-  const { user, isAdmin } = useAuth()
+const AdminEnrollmentsPage = () => {
+  const { user, isAdmin, loading: authLoading } = useAuth()
   const [enrollments, setEnrollments] = useState([])
   const [tournaments, setTournaments] = useState([])
+  const [profiles, setProfiles] = useState({})
   const [loading, setLoading] = useState(true)
   const [selectedEnrollment, setSelectedEnrollment] = useState(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
-  const [showActionModal, setShowActionModal] = useState(false)
-  const [actionType, setActionType] = useState('')
   const [filters, setFilters] = useState({
     tournament: 'all',
     status: 'all',
@@ -41,282 +39,312 @@ const AdminEnrollments = () => {
   })
 
   useEffect(() => {
-    if (user && isAdmin) {
-      fetchData()
+    if (!authLoading && user) {
+      if (!isAdmin) {
+        window.location.href = '/'
+        return
+      }
+      loadData()
     }
-  }, [user, isAdmin])
+  }, [user, isAdmin, authLoading])
 
-  const fetchData = async () => {
+  const loadData = async () => {
     try {
-      const [
-        { data: enrollmentsData },
-        { data: tournamentsData }
-      ] = await Promise.all([
-        supabase
-          .from('tournament_enrollments')
-          .select(`
-            *,
-            user:user_id(
-              username,
-              email,
-              avatar_url
-            ),
-            tournament:tournament_id(
-              id,
-              title,
-              slug,
-              game_name,
-              joining_fee,
-              status,
-              current_participants,
-              max_participants
-            )
-          `)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('tournaments')
-          .select('id, title, game_name')
-          .order('created_at', { ascending: false })
-      ])
+      setLoading(true)
+      
+      // Load tournaments
+      const { data: tournamentsData, error: tournamentsError } = await supabase
+        .from('tournaments')
+        .select('id, title, slug, game_name, joining_fee, max_participants, current_participants')
+        .order('created_at', { ascending: false })
 
-      setEnrollments(enrollmentsData || [])
+      if (tournamentsError) throw tournamentsError
+
+      // Load enrollments
+      const { data: enrollmentsData, error: enrollmentsError } = await supabase
+        .from('tournament_enrollments')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (enrollmentsError) throw enrollmentsError
+
+      // Load user profiles for enrollments
+      const userIds = [...new Set(enrollmentsData?.map(e => e.user_id) || [])]
+      const profilesData = {}
+
+      for (const userId of userIds) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('username, email, gamer_tag')
+          .eq('id', userId)
+          .single()
+
+        if (!profileError && profile) {
+          profilesData[userId] = profile
+        }
+      }
+
       setTournaments(tournamentsData || [])
+      setEnrollments(enrollmentsData || [])
+      setProfiles(profilesData)
+
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error('Error loading data:', error)
+      alert('Error loading data: ' + error.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleApprove = async (enrollmentId, teamId = null) => {
+  const getTournamentById = (tournamentId) => {
+    return tournaments.find(t => t.id === tournamentId) || {}
+  }
+
+  const getUserProfile = (userId) => {
+    return profiles[userId] || { username: 'Unknown User', email: 'N/A', gamer_tag: 'N/A' }
+  }
+
+  const updateEnrollmentStatus = async (enrollmentId, status, teamId = null) => {
     try {
-      const finalTeamId = teamId || generateTeamId()
-      
+      const updates = {
+        payment_status: status,
+        updated_at: new Date().toISOString()
+      }
+
+      if (status === 'completed' && teamId) {
+        updates.team_id = teamId
+      }
+
       const { error } = await supabase
         .from('tournament_enrollments')
-        .update({ 
-          payment_status: 'completed',
-          team_id: finalTeamId,
-          verified_at: new Date().toISOString(),
-          verified_by: user.id
-        })
+        .update(updates)
         .eq('id', enrollmentId)
 
       if (error) throw error
 
-      // Update tournament participant count
+      // If approved, update tournament participants count
+      if (status === 'completed') {
+        const enrollment = enrollments.find(e => e.id === enrollmentId)
+        if (enrollment) {
+          const tournament = getTournamentById(enrollment.tournament_id)
+          const { error: updateError } = await supabase
+            .from('tournaments')
+            .update({ 
+              current_participants: (tournament.current_participants || 0) + 1 
+            })
+            .eq('id', enrollment.tournament_id)
+
+          if (updateError) throw updateError
+        }
+      }
+
+      // Send notification to user
       const enrollment = enrollments.find(e => e.id === enrollmentId)
       if (enrollment) {
+        let notificationTitle = ''
+        let notificationMessage = ''
+        let notificationType = ''
+
+        if (status === 'completed') {
+          notificationTitle = 'Enrollment Approved! 🎉'
+          notificationMessage = `Your enrollment for ${getTournamentById(enrollment.tournament_id).title} has been approved. Team ID: ${teamId}`
+          notificationType = 'success'
+        } else if (status === 'rejected') {
+          notificationTitle = 'Enrollment Rejected'
+          notificationMessage = `Your enrollment for ${getTournamentById(enrollment.tournament_id).title} was rejected. Please contact support for details.`
+          notificationType = 'warning'
+        }
+
         await supabase
-          .from('tournaments')
-          .update({ 
-            current_participants: (enrollment.tournament.current_participants || 0) + 1 
+          .from('notifications')
+          .insert({
+            user_id: enrollment.user_id,
+            title: notificationTitle,
+            message: notificationMessage,
+            type: notificationType,
+            related_tournament_id: enrollment.tournament_id
           })
-          .eq('id', enrollment.tournament_id)
       }
 
-      // Create success notification for user
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: enrollment.user_id,
-          title: '🎉 Enrollment Approved!',
-          message: `Your enrollment for "${enrollment.tournament.title}" has been approved. Your Team ID: ${finalTeamId}. Get ready to compete!`,
-          type: 'success',
-          related_tournament_id: enrollment.tournament_id
-        })
-
-      fetchData()
-      setShowActionModal(false)
-    } catch (error) {
-      console.error('Error approving enrollment:', error)
-    }
-  }
-
-  const handleReject = async (enrollmentId, reason = 'Payment verification failed') => {
-    try {
-      const { error } = await supabase
-        .from('tournament_enrollments')
-        .update({ 
-          payment_status: 'rejected',
-          rejection_reason: reason,
-          rejected_at: new Date().toISOString(),
-          rejected_by: user.id
-        })
-        .eq('id', enrollmentId)
-
-      if (error) throw error
-
-      const enrollment = enrollments.find(e => e.id === enrollmentId)
+      // Reload data
+      await loadData()
       
-      // Create rejection notification for user
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: enrollment.user_id,
-          title: 'Enrollment Rejected',
-          message: `Your enrollment for "${enrollment.tournament.title}" was rejected. Reason: ${reason}. Contact support if you believe this is a mistake.`,
-          type: 'warning',
-          related_tournament_id: enrollment.tournament_id
-        })
-
-      fetchData()
-      setShowActionModal(false)
-    } catch (error) {
-      console.error('Error rejecting enrollment:', error)
-    }
-  }
-
-  const handleDelete = async (enrollmentId) => {
-    if (!confirm('Are you sure you want to delete this enrollment? This action cannot be undone.')) return
-
-    try {
-      const enrollment = enrollments.find(e => e.id === enrollmentId)
+      alert(`Enrollment ${status === 'completed' ? 'approved' : 'rejected'} successfully!`)
       
-      // If enrollment was approved, decrement tournament participant count
-      if (enrollment.payment_status === 'completed') {
-        await supabase
-          .from('tournaments')
-          .update({ 
-            current_participants: (enrollment.tournament.current_participants || 1) - 1 
-          })
-          .eq('id', enrollment.tournament_id)
-      }
-
-      const { error } = await supabase
-        .from('tournament_enrollments')
-        .delete()
-        .eq('id', enrollmentId)
-
-      if (error) throw error
-
-      fetchData()
     } catch (error) {
-      console.error('Error deleting enrollment:', error)
+      console.error('Error updating enrollment:', error)
+      alert('Error updating enrollment: ' + error.message)
     }
   }
 
-  const generateTeamId = () => {
-    const prefix = 'TEAM'
-    const random = Math.random().toString(36).substr(2, 6).toUpperCase()
-    return `${prefix}${random}`
+  const generateTeamId = (tournamentSlug) => {
+    const prefix = tournamentSlug ? tournamentSlug.toUpperCase().substring(0, 3) : 'TMN'
+    const randomNum = Math.floor(100 + Math.random() * 900)
+    return `${prefix}${randomNum}`
   }
 
-  const getStatusStats = () => {
-    const stats = {
-      pending: enrollments.filter(e => e.payment_status === 'pending').length,
-      completed: enrollments.filter(e => e.payment_status === 'completed').length,
-      rejected: enrollments.filter(e => e.payment_status === 'rejected').length,
-      total: enrollments.length
+  const handleApprove = async (enrollment) => {
+    const tournament = getTournamentById(enrollment.tournament_id)
+    const teamId = generateTeamId(tournament.slug)
+    if (confirm(`Approve enrollment and assign Team ID: ${teamId}?`)) {
+      await updateEnrollmentStatus(enrollment.id, 'completed', teamId)
     }
-    return stats
   }
 
+  const handleReject = async (enrollment) => {
+    if (confirm('Reject this enrollment?')) {
+      await updateEnrollmentStatus(enrollment.id, 'rejected')
+    }
+  }
+
+  const handleViewDetails = (enrollment) => {
+    setSelectedEnrollment(enrollment)
+    setShowDetailsModal(true)
+  }
+
+  // Filter enrollments
   const filteredEnrollments = enrollments.filter(enrollment => {
-    // Tournament filter
+    const tournament = getTournamentById(enrollment.tournament_id)
+    const userProfile = getUserProfile(enrollment.user_id)
+
     if (filters.tournament !== 'all' && enrollment.tournament_id !== filters.tournament) {
       return false
     }
-
-    // Status filter
     if (filters.status !== 'all' && enrollment.payment_status !== filters.status) {
       return false
     }
-
-    // Search filter
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase()
-      const matchesUser = enrollment.user?.username?.toLowerCase().includes(searchTerm) ||
-                         enrollment.user?.email?.toLowerCase().includes(searchTerm)
-      const matchesTournament = enrollment.tournament?.title?.toLowerCase().includes(searchTerm)
-      const matchesTeamId = enrollment.team_id?.toLowerCase().includes(searchTerm)
-      const matchesTransaction = enrollment.transaction_id?.toLowerCase().includes(searchTerm)
-      const matchesGameName = enrollment.in_game_nickname?.toLowerCase().includes(searchTerm)
-
-      if (!matchesUser && !matchesTournament && !matchesTeamId && !matchesTransaction && !matchesGameName) {
-        return false
-      }
+      return (
+        userProfile.username?.toLowerCase().includes(searchTerm) ||
+        userProfile.email?.toLowerCase().includes(searchTerm) ||
+        enrollment.in_game_nickname?.toLowerCase().includes(searchTerm) ||
+        enrollment.transaction_id?.toLowerCase().includes(searchTerm)
+      )
     }
-
     return true
   })
 
-  const stats = getStatusStats()
+  // Stats
+  const stats = {
+    total: enrollments.length,
+    pending: enrollments.filter(e => e.payment_status === 'pending').length,
+    completed: enrollments.filter(e => e.payment_status === 'completed').length,
+    rejected: enrollments.filter(e => e.payment_status === 'rejected').length
+  }
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900/30 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-cyan-400 font-semibold">Loading Enrollments...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900/30 pt-20 flex items-center justify-center">
         <div className="text-center">
-          <FaExclamationTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">Admin privileges required to access this page.</p>
+          <IoMdAlert className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
+          <p className="text-gray-400">You don't have permission to access this page.</p>
         </div>
       </div>
     )
   }
 
   return (
-   
-      <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900/30 pt-20">
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Enrollments Management</h1>
-            <p className="text-gray-600">Review and manage tournament enrollments</p>
+        <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center space-x-4 mb-4 lg:mb-0">
+              <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <FaUsers className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Enrollment Management</h1>
+                <p className="text-cyan-400">Manage tournament enrollments and payments</p>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={loadData}
+                className="px-4 py-2 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors duration-300 flex items-center space-x-2"
+              >
+                <FaSync className="w-4 h-4" />
+                <span>Refresh</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title="Total Enrollments"
-            value={stats.total}
-            icon={FaUsers}
-            color="blue"
-          />
-          <StatCard
-            title="Pending Review"
-            value={stats.pending}
-            icon={FaClock}
-            color="yellow"
-          />
-          <StatCard
-            title="Approved"
-            value={stats.completed}
-            icon={FaUserCheck}
-            color="green"
-          />
-          <StatCard
-            title="Rejected"
-            value={stats.rejected}
-            icon={FaUserTimes}
-            color="red"
-          />
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Total Enrollments</p>
+                <p className="text-3xl font-bold text-white">{stats.total}</p>
+              </div>
+              <FaUsers className="w-8 h-8 text-cyan-400" />
+            </div>
+          </div>
+          
+          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-yellow-500/30 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Pending Review</p>
+                <p className="text-3xl font-bold text-white">{stats.pending}</p>
+              </div>
+              <FaClock className="w-8 h-8 text-yellow-400" />
+            </div>
+          </div>
+          
+          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-green-500/30 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Approved</p>
+                <p className="text-3xl font-bold text-white">{stats.completed}</p>
+              </div>
+              <FaCheckCircle className="w-8 h-8 text-green-400" />
+            </div>
+          </div>
+          
+          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-red-500/30 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Rejected</p>
+                <p className="text-3xl font-bold text-white">{stats.rejected}</p>
+              </div>
+              <FaTimesCircle className="w-8 h-8 text-red-400" />
+            </div>
+          </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-              <div className="relative">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search users, tournaments, team IDs..."
-                  value={filters.search}
-                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tournament</label>
+              <label className="block text-gray-300 text-sm font-medium mb-2">
+                <FaFilter className="w-4 h-4 inline mr-2" />
+                Tournament
+              </label>
               <select
                 value={filters.tournament}
                 onChange={(e) => setFilters(prev => ({ ...prev, tournament: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500 transition-colors"
               >
                 <option value="all">All Tournaments</option>
                 {tournaments.map(tournament => (
@@ -328,11 +356,14 @@ const AdminEnrollments = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <label className="block text-gray-300 text-sm font-medium mb-2">
+                <FaFilter className="w-4 h-4 inline mr-2" />
+                Status
+              </label>
               <select
                 value={filters.status}
                 onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500 transition-colors"
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
@@ -341,491 +372,482 @@ const AdminEnrollments = () => {
               </select>
             </div>
 
-            <div className="flex items-end">
-              <button
-                onClick={() => setFilters({ tournament: 'all', status: 'all', search: '' })}
-                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200"
-              >
-                Clear Filters
-              </button>
+            <div className="md:col-span-2">
+              <label className="block text-gray-300 text-sm font-medium mb-2">
+                <FaSearch className="w-4 h-4 inline mr-2" />
+                Search
+              </label>
+              <input
+                type="text"
+                value={filters.search}
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors"
+                placeholder="Search by username, email, game nickname, or transaction ID..."
+              />
             </div>
           </div>
         </div>
 
         {/* Enrollments Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User & Tournament
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Payment Details
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Game Info
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-cyan-500/20">
+                  <th className="text-left p-4 text-cyan-400 font-semibold">User</th>
+                  <th className="text-left p-4 text-cyan-400 font-semibold">Tournament</th>
+                  <th className="text-left p-4 text-cyan-400 font-semibold">Game Details</th>
+                  <th className="text-left p-4 text-cyan-400 font-semibold">Payment</th>
+                  <th className="text-left p-4 text-cyan-400 font-semibold">Status</th>
+                  <th className="text-left p-4 text-cyan-400 font-semibold">Date</th>
+                  <th className="text-left p-4 text-cyan-400 font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredEnrollments.map((enrollment) => (
-                  <EnrollmentRow
-                    key={enrollment.id}
-                    enrollment={enrollment}
-                    onViewDetails={() => {
-                      setSelectedEnrollment(enrollment)
-                      setShowDetailsModal(true)
-                    }}
-                    onApprove={() => {
-                      setSelectedEnrollment(enrollment)
-                      setActionType('approve')
-                      setShowActionModal(true)
-                    }}
-                    onReject={() => {
-                      setSelectedEnrollment(enrollment)
-                      setActionType('reject')
-                      setShowActionModal(true)
-                    }}
-                    onDelete={() => handleDelete(enrollment.id)}
-                  />
-                ))}
+              <tbody>
+                {filteredEnrollments.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="p-8 text-center text-gray-400">
+                      <FaUsers className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <p>No enrollments found</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredEnrollments.map(enrollment => (
+                    <EnrollmentRow
+                      key={enrollment.id}
+                      enrollment={enrollment}
+                      tournament={getTournamentById(enrollment.tournament_id)}
+                      userProfile={getUserProfile(enrollment.user_id)}
+                      onViewDetails={handleViewDetails}
+                      onApprove={handleApprove}
+                      onReject={handleReject}
+                    />
+                  ))
+                )}
               </tbody>
             </table>
           </div>
-
-          {filteredEnrollments.length === 0 && (
-            <div className="text-center py-12">
-              <FaUsers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No enrollments found</h3>
-              <p className="text-gray-500">Try adjusting your search or filters</p>
-            </div>
-          )}
         </div>
-
-        {/* Modals */}
-        {showDetailsModal && selectedEnrollment && (
-          <EnrollmentDetailsModal
-            enrollment={selectedEnrollment}
-            onClose={() => {
-              setShowDetailsModal(false)
-              setSelectedEnrollment(null)
-            }}
-          />
-        )}
-
-        {showActionModal && selectedEnrollment && (
-          <ActionModal
-            enrollment={selectedEnrollment}
-            actionType={actionType}
-            onClose={() => {
-              setShowActionModal(false)
-              setSelectedEnrollment(null)
-              setActionType('')
-            }}
-            onApprove={handleApprove}
-            onReject={handleReject}
-          />
-        )}
       </div>
-    </Layout>
+
+      {/* Enrollment Details Modal */}
+      {showDetailsModal && selectedEnrollment && (
+        <EnrollmentDetailsModal
+          enrollment={selectedEnrollment}
+          tournament={getTournamentById(selectedEnrollment.tournament_id)}
+          userProfile={getUserProfile(selectedEnrollment.user_id)}
+          onClose={() => setShowDetailsModal(false)}
+          onApprove={handleApprove}
+          onReject={handleReject}
+        />
+      )}
+    </div>
   )
 }
 
-const EnrollmentRow = ({ enrollment, onViewDetails, onApprove, onReject, onDelete }) => {
+// Enrollment Row Component
+const EnrollmentRow = ({ enrollment, tournament, userProfile, onViewDetails, onApprove, onReject }) => {
   const getStatusBadge = (status) => {
     const statusConfig = {
-      pending: { 
-        color: 'bg-yellow-100 text-yellow-800 border-yellow-200', 
-        icon: FaClock 
-      },
-      completed: { 
-        color: 'bg-green-100 text-green-800 border-green-200', 
-        icon: FaCheck 
-      },
-      rejected: { 
-        color: 'bg-red-100 text-red-800 border-red-200', 
-        icon: FaTimes 
-      }
+      pending: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50', icon: FaClock },
+      completed: { color: 'bg-green-500/20 text-green-400 border-green-500/50', icon: FaCheckCircle },
+      rejected: { color: 'bg-red-500/20 text-red-400 border-red-500/50', icon: FaTimesCircle }
     }
+    
     const config = statusConfig[status] || statusConfig.pending
     const Icon = config.icon
-
+    
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.color}`}>
-        <Icon className="w-3 h-3 mr-1" />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <span className={`${config.color} border px-3 py-1 rounded-full text-sm font-semibold flex items-center space-x-1 w-fit`}>
+        <Icon className="w-3 h-3" />
+        <span className="capitalize">{status}</span>
       </span>
     )
   }
 
-  const isTournamentFull = enrollment.tournament?.current_participants >= enrollment.tournament?.max_participants
-
   return (
-    <tr className="hover:bg-gray-50">
-      <td className="px-6 py-4">
+    <tr className="border-b border-gray-700/50 hover:bg-gray-800/50 transition-colors duration-300">
+      <td className="p-4">
         <div className="flex items-center space-x-3">
-          <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
-            {enrollment.user?.username?.charAt(0) || enrollment.user?.email?.charAt(0).toUpperCase()}
+          <div className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full flex items-center justify-center">
+            <FaUser className="w-5 h-5 text-white" />
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-gray-900 truncate">
-              {enrollment.user?.username || enrollment.user?.email}
+          <div>
+            <div className="text-white font-semibold">
+              {userProfile?.username || 'No username'}
             </div>
-            <div className="text-sm text-gray-500 truncate">
-              {enrollment.tournament?.title}
-            </div>
-            <div className="text-xs text-cyan-600 flex items-center space-x-1">
-              <FaTrophy className="w-3 h-3" />
-              <span>{enrollment.tournament?.game_name}</span>
-              {isTournamentFull && (
-                <span className="text-red-500 text-xs ml-2">• FULL</span>
-              )}
-            </div>
+            <div className="text-gray-400 text-sm">{userProfile?.email}</div>
           </div>
         </div>
       </td>
-      <td className="px-6 py-4">
-        <div className="text-sm font-semibold text-gray-900">₹{enrollment.tournament?.joining_fee}</div>
-        <div className="text-sm text-gray-500 font-mono text-xs">{enrollment.transaction_id}</div>
-        {enrollment.team_id && (
-          <div className="text-xs text-green-600 font-mono font-bold flex items-center space-x-1">
-            <FaIdCard className="w-3 h-3" />
-            <span>{enrollment.team_id}</span>
+      
+      <td className="p-4">
+        <div className="flex items-center space-x-2">
+          <GiTrophyCup className="w-4 h-4 text-cyan-400" />
+          <div>
+            <div className="text-white font-medium">{tournament?.title || 'Unknown Tournament'}</div>
+            <div className="text-gray-400 text-sm">{tournament?.game_name || 'N/A'}</div>
           </div>
-        )}
-      </td>
-      <td className="px-6 py-4">
-        <div className="text-sm font-medium text-gray-900">{enrollment.in_game_nickname}</div>
-        <div className="text-sm text-gray-500 font-mono text-xs">UID: {enrollment.game_uid}</div>
-        <div className="text-xs text-gray-400 flex items-center space-x-1">
-          <FaMobile className="w-3 h-3" />
-          <span>{enrollment.mobile_number}</span>
         </div>
       </td>
-      <td className="px-6 py-4">
+      
+      <td className="p-4">
+        <div>
+          <div className="text-white font-medium flex items-center space-x-2">
+            <FaGamepad className="w-3 h-3 text-cyan-400" />
+            <span>{enrollment.in_game_nickname}</span>
+          </div>
+          <div className="text-gray-400 text-sm">UID: {enrollment.game_uid}</div>
+        </div>
+      </td>
+      
+      <td className="p-4">
+        <div>
+          <div className="text-white font-medium flex items-center space-x-2">
+            <FaMoneyBillWave className="w-3 h-3 text-green-400" />
+            <span>₹{tournament?.joining_fee || '0'}</span>
+          </div>
+          <div className="text-gray-400 text-sm font-mono text-xs">
+            {enrollment.transaction_id}
+          </div>
+        </div>
+      </td>
+      
+      <td className="p-4">
         {getStatusBadge(enrollment.payment_status)}
-        {enrollment.verified_at && (
-          <div className="text-xs text-gray-500 mt-1">
-            {new Date(enrollment.verified_at).toLocaleDateString()}
+        {enrollment.team_id && (
+          <div className="text-cyan-400 text-sm font-mono mt-1">
+            {enrollment.team_id}
           </div>
         )}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {new Date(enrollment.created_at).toLocaleDateString()}
-        <div className="text-xs text-gray-400">
+      
+      <td className="p-4">
+        <div className="text-gray-300 text-sm">
+          {new Date(enrollment.created_at).toLocaleDateString()}
+        </div>
+        <div className="text-gray-400 text-xs">
           {new Date(enrollment.created_at).toLocaleTimeString()}
         </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-        <button
-          onClick={onViewDetails}
-          className="text-cyan-600 hover:text-cyan-900 transition-colors duration-200 p-1 rounded"
-          title="View Details"
-        >
-          <FaEye className="w-4 h-4" />
-        </button>
-        
-        {enrollment.payment_status === 'pending' && (
-          <>
-            <button
-              onClick={onApprove}
-              className="text-green-600 hover:text-green-900 transition-colors duration-200 p-1 rounded"
-              title="Approve Enrollment"
-              disabled={isTournamentFull}
-            >
-              <FaCheck className="w-4 h-4" />
-            </button>
-            <button
-              onClick={onReject}
-              className="text-red-600 hover:text-red-900 transition-colors duration-200 p-1 rounded"
-              title="Reject Enrollment"
-            >
-              <FaTimes className="w-4 h-4" />
-            </button>
-          </>
-        )}
-        
-        <button
-          onClick={onDelete}
-          className="text-gray-600 hover:text-gray-900 transition-colors duration-200 p-1 rounded"
-          title="Delete Enrollment"
-        >
-          <FaTrash className="w-4 h-4" />
-        </button>
+      
+      <td className="p-4">
+        <div className="flex space-x-2">
+          <button
+            onClick={() => onViewDetails(enrollment)}
+            className="w-8 h-8 flex items-center justify-center bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors duration-300"
+            title="View Details"
+          >
+            <FaEye className="w-3 h-3" />
+          </button>
+          
+          {enrollment.payment_status === 'pending' && (
+            <>
+              <button
+                onClick={() => onApprove(enrollment)}
+                className="w-8 h-8 flex items-center justify-center bg-green-500/20 border border-green-500/50 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors duration-300"
+                title="Approve"
+              >
+                <FaCheckCircle className="w-3 h-3" />
+              </button>
+              
+              <button
+                onClick={() => onReject(enrollment)}
+                className="w-8 h-8 flex items-center justify-center bg-red-500/20 border border-red-500/50 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors duration-300"
+                title="Reject"
+              >
+                <FaTimesCircle className="w-3 h-3" />
+              </button>
+            </>
+          )}
+        </div>
       </td>
     </tr>
   )
 }
 
-const EnrollmentDetailsModal = ({ enrollment, onClose }) => {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Enrollment Details</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <FaTimes className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+// Enrollment Details Modal Component
+const EnrollmentDetailsModal = ({ enrollment, tournament, userProfile, onClose, onApprove, onReject }) => {
+  const [activeTab, setActiveTab] = useState('details')
 
-        <div className="p-6 space-y-6">
-          {/* User & Tournament Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                <FaUsers className="w-5 h-5 text-cyan-600" />
-                <span>User Information</span>
-              </h3>
-              <div className="space-y-3">
-                <InfoField label="Username" value={enrollment.user?.username || 'N/A'} />
-                <InfoField label="Email" value={enrollment.user?.email} />
-                <InfoField label="Mobile Number" value={enrollment.mobile_number} icon={FaMobile} />
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Address</label>
-                  <p className="text-gray-900 flex items-start space-x-2">
-                    <FaMapMarkerAlt className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                    <span>{enrollment.address}</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                <FaTrophy className="w-5 h-5 text-purple-600" />
-                <span>Tournament Information</span>
-              </h3>
-              <div className="space-y-3">
-                <InfoField label="Tournament" value={enrollment.tournament?.title} />
-                <InfoField label="Game" value={enrollment.tournament?.game_name} />
-                <InfoField label="Entry Fee" value={`₹${enrollment.tournament?.joining_fee}`} />
-                <InfoField 
-                  label="Team ID" 
-                  value={enrollment.team_id || 'Not assigned'} 
-                  valueClass={enrollment.team_id ? 'text-green-600 font-mono font-bold' : 'text-gray-500'}
-                  icon={FaIdCard}
-                />
-                <InfoField 
-                  label="Tournament Status" 
-                  value={enrollment.tournament?.status} 
-                  valueClass={`capitalize ${
-                    enrollment.tournament?.status === 'ongoing' ? 'text-green-600' :
-                    enrollment.tournament?.status === 'upcoming' ? 'text-yellow-600' :
-                    'text-gray-600'
-                  }`}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Game Information */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-              <FaGamepad className="w-5 h-5 text-green-600" />
-              <span>Game Information</span>
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <InfoField label="In-Game Nickname" value={enrollment.in_game_nickname} />
-              <InfoField label="Game UID" value={enrollment.game_uid} valueClass="font-mono" />
-            </div>
-          </div>
-
-          {/* Payment & Status Information */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-              <FaMoneyBillWave className="w-5 h-5 text-yellow-600" />
-              <span>Payment & Status Information</span>
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <InfoField label="Transaction ID" value={enrollment.transaction_id} valueClass="font-mono" />
-              <div>
-                <label className="text-sm font-medium text-gray-500">Payment Status</label>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                  enrollment.payment_status === 'completed' ? 'bg-green-100 text-green-800 border-green-200' :
-                  enrollment.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
-                  'bg-red-100 text-red-800 border-red-200'
-                }`}>
-                  {enrollment.payment_status.charAt(0).toUpperCase() + enrollment.payment_status.slice(1)}
-                </span>
-              </div>
-              {enrollment.verified_at && (
-                <InfoField label="Verified At" value={new Date(enrollment.verified_at).toLocaleString()} />
-              )}
-              {enrollment.rejection_reason && (
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium text-gray-500">Rejection Reason</label>
-                  <div className="mt-1 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-800 text-sm">{enrollment.rejection_reason}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 pt-6">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-const InfoField = ({ label, value, valueClass = '', icon: Icon }) => (
-  <div>
-    <label className="text-sm font-medium text-gray-500">{label}</label>
-    <p className={`text-gray-900 ${valueClass} ${Icon ? 'flex items-center space-x-2' : ''}`}>
-      {Icon && <Icon className="w-4 h-4 text-gray-400" />}
-      <span>{value}</span>
-    </p>
-  </div>
-)
-
-const ActionModal = ({ enrollment, actionType, onClose, onApprove, onReject }) => {
-  const [teamId, setTeamId] = useState(enrollment.team_id || '')
-  const [rejectionReason, setRejectionReason] = useState('')
-
-  const handleSubmit = () => {
-    if (actionType === 'approve') {
-      onApprove(enrollment.id, teamId || undefined)
-    } else {
-      onReject(enrollment.id, rejectionReason || 'Payment verification failed')
-    }
+  const contactUser = () => {
+    const phone = enrollment.mobile_number
+    const message = `Hi ${userProfile?.username}, regarding your enrollment for ${tournament?.title}`
+    
+    // Open WhatsApp
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank')
   }
 
-  const isTournamentFull = enrollment.tournament?.current_participants >= enrollment.tournament?.max_participants
+  const emailUser = () => {
+    const email = userProfile?.email
+    const subject = `Regarding your enrollment for ${tournament?.title}`
+    
+    // Open email client
+    window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}`, '_blank')
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {actionType === 'approve' ? 'Approve Enrollment' : 'Reject Enrollment'}
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
+      
+      <div className="relative bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl shadow-cyan-500/20 w-full max-w-4xl max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="p-6 border-b border-cyan-500/20">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Enrollment Details</h2>
+              <p className="text-cyan-400">{tournament?.title || 'Unknown Tournament'}</p>
+            </div>
+            <button 
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <FaTimesCircle className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
-        <div className="p-6 space-y-4">
-          {actionType === 'approve' ? (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Team ID (Optional)
-              </label>
-              <input
-                type="text"
-                value={teamId}
-                onChange={(e) => setTeamId(e.target.value)}
-                placeholder="Leave empty to auto-generate"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent font-mono"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                A team ID will be automatically generated if left empty
-              </p>
-              
-              {isTournamentFull && (
-                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center space-x-2 text-red-800">
-                    <FaExclamationTriangle className="w-4 h-4" />
-                    <span className="text-sm font-medium">Tournament Full</span>
+        <div className="flex border-b border-cyan-500/20">
+          {['details', 'payment', 'contact'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 px-6 py-4 font-semibold transition-all duration-300 capitalize ${
+                activeTab === tab
+                  ? 'text-cyan-400 border-b-2 border-cyan-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-6 overflow-y-auto max-h-[60vh]">
+          {activeTab === 'details' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* User Information */}
+              <div className="space-y-4">
+                <h3 className="text-white font-bold text-lg flex items-center space-x-2">
+                  <FaUser className="w-5 h-5 text-cyan-400" />
+                  <span>User Information</span>
+                </h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-gray-400 text-sm">Username</label>
+                    <p className="text-white font-semibold">{userProfile?.username || 'N/A'}</p>
                   </div>
-                  <p className="text-sm text-red-700 mt-1">
-                    This tournament has reached maximum participants. Consider rejecting this enrollment.
-                  </p>
+                  
+                  <div>
+                    <label className="text-gray-400 text-sm">Email</label>
+                    <p className="text-white font-semibold">{userProfile?.email || 'N/A'}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-gray-400 text-sm">Gamer Tag</label>
+                    <p className="text-white font-semibold">{userProfile?.gamer_tag || 'N/A'}</p>
+                  </div>
                 </div>
-              )}
-            </div>
-          ) : (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Rejection Reason
-              </label>
-              <textarea
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Enter reason for rejection..."
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-              />
+              </div>
+
+              {/* Game Information */}
+              <div className="space-y-4">
+                <h3 className="text-white font-bold text-lg flex items-center space-x-2">
+                  <FaGamepad className="w-5 h-5 text-purple-400" />
+                  <span>Game Information</span>
+                </h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-gray-400 text-sm">In-Game Nickname</label>
+                    <p className="text-white font-semibold">{enrollment.in_game_nickname}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-gray-400 text-sm">Game UID</label>
+                    <p className="text-white font-mono font-semibold">{enrollment.game_uid}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-gray-400 text-sm">Tournament</label>
+                    <p className="text-white font-semibold">{tournament?.title || 'Unknown Tournament'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="space-y-4">
+                <h3 className="text-white font-bold text-lg flex items-center space-x-2">
+                  <FaPhone className="w-5 h-5 text-green-400" />
+                  <span>Contact Information</span>
+                </h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-gray-400 text-sm">Mobile Number</label>
+                    <p className="text-white font-semibold">{enrollment.mobile_number}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-gray-400 text-sm">Address</label>
+                    <p className="text-white">{enrollment.address}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Enrollment Details */}
+              <div className="space-y-4">
+                <h3 className="text-white font-bold text-lg flex items-center space-x-2">
+                  <FaIdCard className="w-5 h-5 text-yellow-400" />
+                  <span>Enrollment Details</span>
+                </h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-gray-400 text-sm">Status</label>
+                    <p className={`font-semibold capitalize ${
+                      enrollment.payment_status === 'completed' ? 'text-green-400' :
+                      enrollment.payment_status === 'rejected' ? 'text-red-400' :
+                      'text-yellow-400'
+                    }`}>
+                      {enrollment.payment_status}
+                    </p>
+                  </div>
+                  
+                  {enrollment.team_id && (
+                    <div>
+                      <label className="text-gray-400 text-sm">Team ID</label>
+                      <p className="text-cyan-400 font-mono font-bold">{enrollment.team_id}</p>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <label className="text-gray-400 text-sm">Enrolled On</label>
+                    <p className="text-white">
+                      {new Date(enrollment.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2 text-yellow-800">
-              <FaExclamationTriangle className="w-4 h-4" />
-              <span className="text-sm font-medium">Confirmation Required</span>
+          {activeTab === 'payment' && (
+            <div className="space-y-6">
+              <div className="bg-gray-800/50 rounded-xl p-6 border border-cyan-500/30">
+                <h3 className="text-white font-bold text-lg mb-4 flex items-center space-x-2">
+                  <FaMoneyBillWave className="w-5 h-5 text-green-400" />
+                  <span>Payment Information</span>
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-gray-400 text-sm">Transaction ID</label>
+                    <p className="text-white font-mono font-semibold">{enrollment.transaction_id}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-gray-400 text-sm">Amount Paid</label>
+                    <p className="text-green-400 font-bold text-xl">₹{tournament?.joining_fee || '0'}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-gray-400 text-sm">Payment Method</label>
+                    <p className="text-white">UPI Transfer</p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-gray-400 text-sm">Payment Status</label>
+                    <p className={`font-semibold capitalize ${
+                      enrollment.payment_status === 'completed' ? 'text-green-400' :
+                      enrollment.payment_status === 'rejected' ? 'text-red-400' :
+                      'text-yellow-400'
+                    }`}>
+                      {enrollment.payment_status}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Verification Notes */}
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6">
+                <h4 className="text-yellow-400 font-bold mb-3 flex items-center space-x-2">
+                  <IoMdAlert className="w-5 h-5" />
+                  <span>Verification Notes</span>
+                </h4>
+                <ul className="text-yellow-300 text-sm space-y-2">
+                  <li>• Verify transaction ID with bank statement</li>
+                  <li>• Check if amount matches tournament fee</li>
+                  <li>• Contact user if transaction details are unclear</li>
+                  <li>• Assign Team ID only after successful verification</li>
+                </ul>
+              </div>
             </div>
-            <p className="text-sm text-yellow-700 mt-1">
-              {actionType === 'approve' 
-                ? 'This will approve the enrollment and assign a team ID. The user will be notified via email and in-app notification.'
-                : 'This will reject the enrollment. The user will be notified with the reason provided.'
-              }
-            </p>
+          )}
+
+          {activeTab === 'contact' && (
+            <div className="space-y-6">
+              <div className="bg-gray-800/50 rounded-xl p-6 border border-cyan-500/30">
+                <h3 className="text-white font-bold text-lg mb-4">Contact User</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="text-gray-400 text-sm">Mobile Number</label>
+                    <p className="text-white font-semibold">{enrollment.mobile_number}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-gray-400 text-sm">Email</label>
+                    <p className="text-white font-semibold">{userProfile?.email || 'N/A'}</p>
+                  </div>
+                </div>
+
+                <div className="flex space-x-4">
+                  <button
+                    onClick={contactUser}
+                    className="flex-1 flex items-center justify-center space-x-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 text-green-400 rounded-xl p-4 transition-colors duration-300"
+                  >
+                    <FaWhatsapp className="w-5 h-5" />
+                    <span>Contact via WhatsApp</span>
+                  </button>
+                  
+                  <button
+                    onClick={emailUser}
+                    className="flex-1 flex items-center justify-center space-x-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 text-cyan-400 rounded-xl p-4 transition-colors duration-300"
+                  >
+                    <FaEnvelope className="w-5 h-5" />
+                    <span>Send Email</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        {enrollment.payment_status === 'pending' && (
+          <div className="p-6 border-t border-cyan-500/20 bg-gray-800/50">
+            <div className="flex space-x-4">
+              <button
+                onClick={() => onReject(enrollment)}
+                className="flex-1 px-6 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-400 rounded-xl font-semibold transition-colors duration-300"
+              >
+                Reject Enrollment
+              </button>
+              
+              <button
+                onClick={() => onApprove(enrollment)}
+                className="flex-1 px-6 py-3 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 text-green-400 rounded-xl font-semibold transition-colors duration-300"
+              >
+                Approve & Assign Team ID
+              </button>
+            </div>
           </div>
-        </div>
-
-        <div className="flex justify-end space-x-4 px-6 py-4 bg-gray-50 rounded-b-lg">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={actionType === 'approve' && isTournamentFull}
-            className={`px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-              actionType === 'approve'
-                ? 'bg-green-600 hover:bg-green-700'
-                : 'bg-red-600 hover:bg-red-700'
-            }`}
-          >
-            {actionType === 'approve' ? 'Approve Enrollment' : 'Reject Enrollment'}
-          </button>
-        </div>
+        )}
       </div>
     </div>
   )
 }
 
-const StatCard = ({ title, value, icon: Icon, color }) => {
-  const colorClasses = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    yellow: 'bg-yellow-500',
-    red: 'bg-red-500'
-  }
-
-  return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center">
-        <div className={`p-3 rounded-lg ${colorClasses[color]} bg-opacity-10`}>
-          <Icon className={`w-6 h-6 ${colorClasses[color].replace('bg-', 'text-')}`} />
-        </div>
-        <div className="ml-4">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default AdminEnrollments
+export default AdminEnrollmentsPage

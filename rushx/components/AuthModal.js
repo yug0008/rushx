@@ -37,8 +37,6 @@ const AuthModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen])
 
-  if (!isOpen) return null
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -57,6 +55,14 @@ const AuthModal = ({ isOpen, onClose }) => {
         })
         if (error) throw error
         setMessage({ type: 'success', text: 'Account created! Check your email to verify.' })
+        
+        // Reset form after successful signup
+        setFormData({
+          email: '',
+          password: '',
+          username: '',
+          gamerTag: ''
+        })
       }
     } catch (error) {
       setMessage({ type: 'error', text: error.message })
@@ -80,6 +86,8 @@ const AuthModal = ({ isOpen, onClose }) => {
       [e.target.name]: e.target.value
     }))
   }
+
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
