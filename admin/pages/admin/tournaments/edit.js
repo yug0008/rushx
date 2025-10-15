@@ -634,9 +634,451 @@ const EditTournamentPage = () => {
             </div>
           </div>
 
-          {/* Continue with all other sections from NewTournamentPage */}
-          {/* Tournament Settings, Schedule, Prize Pool, About Content, Rules, Additional Links */}
-
+        {/* Tournament Settings */}
+                  <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
+                      <FaList className="w-6 h-6 text-green-400" />
+                      <span>Tournament Settings</span>
+                    </h2>
+        
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Platform
+                        </label>
+                        <select
+                          value={formData.platform}
+                          onChange={(e) => setFormData(prev => ({ ...prev, platform: e.target.value }))}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                        >
+                          <option value="mobile">Mobile</option>
+                          <option value="pc">PC</option>
+                          <option value="console">Console</option>
+                          <option value="cross-platform">Cross-Platform</option>
+                        </select>
+                      </div>
+        
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Game Mode
+                        </label>
+                        <select
+                          value={formData.game_mode}
+                          onChange={(e) => setFormData(prev => ({ ...prev, game_mode: e.target.value }))}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                        >
+                          <option value="battle_royale">Battle Royale</option>
+                          <option value="tdm">Team Deathmatch</option>
+                          <option value="clash_squad">Clash Squad</option>
+                          <option value="ranked">Ranked</option>
+                          <option value="custom">Custom</option>
+                        </select>
+                      </div>
+        
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Status
+                        </label>
+                        <select
+                          value={formData.status}
+                          onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                        >
+                          <option value="upcoming">Upcoming</option>
+                          <option value="ongoing">Ongoing</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </div>
+        
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Max Participants *
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          min="2"
+                          value={formData.max_participants}
+                          onChange={(e) => setFormData(prev => ({ ...prev, max_participants: parseInt(e.target.value) }))}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                        />
+                      </div>
+        
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Joining Fee (₹)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={formData.joining_fee}
+                          onChange={(e) => setFormData(prev => ({ ...prev, joining_fee: parseFloat(e.target.value) }))}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                        />
+                      </div>
+        
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="is_featured"
+                          checked={formData.is_featured}
+                          onChange={(e) => setFormData(prev => ({ ...prev, is_featured: e.target.checked }))}
+                          className="w-4 h-4 text-cyan-500 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
+                        />
+                        <label htmlFor="is_featured" className="text-white font-semibold">
+                          Featured Tournament
+                        </label>
+                      </div>
+        
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="is_public"
+                          checked={formData.is_public}
+                          onChange={(e) => setFormData(prev => ({ ...prev, is_public: e.target.checked }))}
+                          className="w-4 h-4 text-cyan-500 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
+                        />
+                        <label htmlFor="is_public" className="text-white font-semibold">
+                          Public Tournament
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+        
+                  {/* Schedule */}
+                  <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
+                      <FaCalendarAlt className="w-6 h-6 text-yellow-400" />
+                      <span>Schedule</span>
+                    </h2>
+        
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Registration Start *
+                        </label>
+                        <input
+                          type="datetime-local"
+                          required
+                          value={formData.schedule.registration_start}
+                          onChange={(e) => handleInputChange('schedule.registration_start', e.target.value)}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                        />
+                      </div>
+        
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Registration End *
+                        </label>
+                        <input
+                          type="datetime-local"
+                          required
+                          value={formData.schedule.registration_end}
+                          onChange={(e) => handleInputChange('schedule.registration_end', e.target.value)}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                        />
+                      </div>
+        
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Tournament Start *
+                        </label>
+                        <input
+                          type="datetime-local"
+                          required
+                          value={formData.schedule.start_date}
+                          onChange={(e) => handleInputChange('schedule.start_date', e.target.value)}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                        />
+                      </div>
+        
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Tournament End
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={formData.schedule.end_date}
+                          onChange={(e) => handleInputChange('schedule.end_date', e.target.value)}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                        />
+                      </div>
+        
+                      <div className="lg:col-span-2">
+                        <label className="block text-white font-semibold mb-2">
+                          Check-in Time
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.schedule.check_in_time}
+                          onChange={(e) => handleInputChange('schedule.check_in_time', e.target.value)}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                          placeholder="e.g., 30 minutes before match"
+                        />
+                      </div>
+                    </div>
+                  </div>
+        
+                  {/* Prize Pool */}
+                  <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
+                      <FaTrophy className="w-6 h-6 text-yellow-400" />
+                      <span>Prize Pool</span>
+                    </h2>
+        
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Winner Prize (₹)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={formData.prize_pool.winner}
+                          onChange={(e) => handleInputChange('prize_pool.winner', parseFloat(e.target.value))}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                        />
+                      </div>
+        
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Runner-up Prize (₹)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={formData.prize_pool.runnerUp}
+                          onChange={(e) => handleInputChange('prize_pool.runnerUp', parseFloat(e.target.value))}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                        />
+                      </div>
+        
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Third Place Prize (₹)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={formData.prize_pool.thirdPlace}
+                          onChange={(e) => handleInputChange('prize_pool.thirdPlace', parseFloat(e.target.value))}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                        />
+                      </div>
+        
+                      <div className="lg:col-span-3">
+                        <div className="bg-gradient-to-r from-yellow-500/10 to-yellow-500/5 rounded-xl p-4 border border-yellow-500/30">
+                          <div className="flex justify-between items-center">
+                            <span className="text-white font-semibold">Total Prize Pool:</span>
+                            <span className="text-yellow-400 font-bold text-xl">
+                              ₹{calculateTotalPrize().toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+        
+                  {/* About Content */}
+                  <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
+                      <FaEye className="w-6 h-6 text-blue-400" />
+                      <span>About Content</span>
+                    </h2>
+        
+                    <div className="space-y-4">
+                      {formData.about.sections.map((section, index) => (
+                        <div key={index} className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                          <div className="flex items-center justify-between mb-4">
+                            <select
+                              value={section.type}
+                              onChange={(e) => handleAboutSectionChange(index, 'type', e.target.value)}
+                              className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                            >
+                              <option value="heading">Heading</option>
+                              <option value="paragraph">Paragraph</option>
+                              <option value="bullet_list">Bullet List</option>
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => removeAboutSection(index)}
+                              className="px-3 py-2 bg-red-500/20 border border-red-500/50 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors duration-300"
+                            >
+                              <FaTimes className="w-4 h-4" />
+                            </button>
+                          </div>
+                          
+                          {section.type === 'bullet_list' ? (
+                            <div className="space-y-2">
+                              <textarea
+                                value={section.content}
+                                onChange={(e) => handleAboutSectionChange(index, 'content', e.target.value)}
+                                rows={4}
+                                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 resize-none"
+                                placeholder="Enter bullet points (one per line)"
+                              />
+                              <p className="text-gray-400 text-sm">
+                                Enter each bullet point on a new line
+                              </p>
+                            </div>
+                          ) : (
+                            <textarea
+                              value={section.content}
+                              onChange={(e) => handleAboutSectionChange(index, 'content', e.target.value)}
+                              rows={section.type === 'heading' ? 2 : 4}
+                              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 resize-none"
+                              placeholder={section.type === 'heading' ? 'Enter heading...' : 'Enter content...'}
+                            />
+                          )}
+                        </div>
+                      ))}
+                      
+                      <div className="flex space-x-3">
+                        <button
+                          type="button"
+                          onClick={() => addAboutSection('heading')}
+                          className="px-4 py-2 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors duration-300"
+                        >
+                          Add Heading
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => addAboutSection('paragraph')}
+                          className="px-4 py-2 bg-blue-500/20 border border-blue-500/50 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors duration-300"
+                        >
+                          Add Paragraph
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => addAboutSection('bullet_list')}
+                          className="px-4 py-2 bg-green-500/20 border border-green-500/50 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors duration-300"
+                        >
+                          Add Bullet List
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+        
+                  {/* Rules */}
+                  <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
+                      <FaLock className="w-6 h-6 text-red-400" />
+                      <span>Tournament Rules</span>
+                    </h2>
+        
+                    <div className="space-y-6">
+                      {formData.rules.sections.map((section, sectionIndex) => (
+                        <div key={sectionIndex} className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
+                          <div className="flex items-center justify-between mb-4">
+                            <input
+                              type="text"
+                              value={section.title}
+                              onChange={(e) => handleRulesSectionChange(sectionIndex, 'title', e.target.value)}
+                              className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white font-semibold text-lg focus:outline-none focus:border-cyan-500"
+                              placeholder="Section Title"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeRulesSection(sectionIndex)}
+                              className="ml-3 px-3 py-2 bg-red-500/20 border border-red-500/50 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors duration-300"
+                            >
+                              <FaTimes className="w-4 h-4" />
+                            </button>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            {section.rules.map((rule, ruleIndex) => (
+                              <div key={ruleIndex} className="flex items-center space-x-3">
+                                <span className="text-cyan-400 w-4">•</span>
+                                <input
+                                  type="text"
+                                  value={rule}
+                                  onChange={(e) => handleRuleChange(sectionIndex, ruleIndex, e.target.value)}
+                                  className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                                  placeholder="Enter rule..."
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeRule(sectionIndex, ruleIndex)}
+                                  className="px-2 py-2 bg-red-500/20 border border-red-500/50 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors duration-300"
+                                >
+                                  <FaTimes className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                            
+                            <button
+                              type="button"
+                              onClick={() => addRule(sectionIndex)}
+                              className="px-3 py-2 bg-green-500/20 border border-green-500/50 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors duration-300 text-sm"
+                            >
+                              + Add Rule
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      <button
+                        type="button"
+                        onClick={addRulesSection}
+                        className="px-4 py-2 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors duration-300 flex items-center space-x-2"
+                      >
+                        <FaPlus className="w-4 h-4" />
+                        <span>Add Rules Section</span>
+                      </button>
+                    </div>
+                  </div>
+        
+                  {/* Additional Links */}
+                  <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
+                      <FaLink className="w-6 h-6 text-purple-400" />
+                      <span>Additional Links</span>
+                    </h2>
+        
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Stream URL
+                        </label>
+                        <input
+                          type="url"
+                          value={formData.stream_url}
+                          onChange={(e) => setFormData(prev => ({ ...prev, stream_url: e.target.value }))}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                          placeholder="https://twitch.tv/your-channel"
+                        />
+                      </div>
+        
+                      <div>
+                        <label className="block text-white font-semibold mb-2">
+                          Discord URL
+                        </label>
+                        <input
+                          type="url"
+                          value={formData.discord_url}
+                          onChange={(e) => setFormData(prev => ({ ...prev, discord_url: e.target.value }))}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                          placeholder="https://discord.gg/your-server"
+                        />
+                      </div>
+        
+                      <div className="lg:col-span-2">
+                        <label className="block text-white font-semibold mb-2">
+                          Organizer
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.organizer}
+                          onChange={(e) => setFormData(prev => ({ ...prev, organizer: e.target.value }))}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                          placeholder="Tournament organizer name"
+                        />
+                      </div>
+                    </div>
+                  </div>
+        
           {/* Submit Button */}
           <div className="flex space-x-4">
             <button
