@@ -81,6 +81,13 @@ const AdminEnrollmentsPage = () => {
 
         if (!profileError && profile) {
           profilesData[userId] = profile
+        } else {
+          // Fallback profile data
+          profilesData[userId] = { 
+            username: 'Unknown User', 
+            email: 'N/A', 
+            gamer_tag: 'N/A' 
+          }
         }
       }
 
@@ -97,18 +104,26 @@ const AdminEnrollmentsPage = () => {
   }
 
   const getTournamentById = (tournamentId) => {
-    return tournaments.find(t => t.id === tournamentId) || {}
+    return tournaments.find(t => t.id === tournamentId) || { 
+      title: 'Unknown Tournament', 
+      game_name: 'N/A', 
+      joining_fee: 0,
+      slug: 'tmn'
+    }
   }
 
   const getUserProfile = (userId) => {
-    return profiles[userId] || { username: 'Unknown User', email: 'N/A', gamer_tag: 'N/A' }
+    return profiles[userId] || { 
+      username: 'Unknown User', 
+      email: 'N/A', 
+      gamer_tag: 'N/A' 
+    }
   }
 
   const updateEnrollmentStatus = async (enrollmentId, status, teamId = null) => {
     try {
       const updates = {
-        payment_status: status,
-        updated_at: new Date().toISOString()
+        payment_status: status
       }
 
       if (status === 'completed' && teamId) {
@@ -134,7 +149,7 @@ const AdminEnrollmentsPage = () => {
             })
             .eq('id', enrollment.tournament_id)
 
-          if (updateError) throw updateError
+          if (updateError) console.error('Error updating tournament count:', updateError)
         }
       }
 
@@ -169,11 +184,11 @@ const AdminEnrollmentsPage = () => {
       // Reload data
       await loadData()
       
-      alert(`Enrollment ${status === 'completed' ? 'approved' : 'rejected'} successfully!`)
+      alert(`✅ Enrollment ${status === 'completed' ? 'approved' : 'rejected'} successfully!`)
       
     } catch (error) {
       console.error('Error updating enrollment:', error)
-      alert('Error updating enrollment: ' + error.message)
+      alert('❌ Error updating enrollment: ' + error.message)
     }
   }
 
@@ -186,13 +201,21 @@ const AdminEnrollmentsPage = () => {
   const handleApprove = async (enrollment) => {
     const tournament = getTournamentById(enrollment.tournament_id)
     const teamId = generateTeamId(tournament.slug)
+    
+    // Check if tournament is full
+    if (tournament.current_participants >= tournament.max_participants) {
+      alert('❌ Tournament is full! Cannot approve more enrollments.')
+      return
+    }
+    
     if (confirm(`Approve enrollment and assign Team ID: ${teamId}?`)) {
       await updateEnrollmentStatus(enrollment.id, 'completed', teamId)
     }
   }
 
   const handleReject = async (enrollment) => {
-    if (confirm('Reject this enrollment?')) {
+    const reason = prompt('Please provide a reason for rejection (optional):')
+    if (reason !== null) { // User didn't cancel
       await updateEnrollmentStatus(enrollment.id, 'rejected')
     }
   }
@@ -219,7 +242,8 @@ const AdminEnrollmentsPage = () => {
         userProfile.username?.toLowerCase().includes(searchTerm) ||
         userProfile.email?.toLowerCase().includes(searchTerm) ||
         enrollment.in_game_nickname?.toLowerCase().includes(searchTerm) ||
-        enrollment.transaction_id?.toLowerCase().includes(searchTerm)
+        enrollment.transaction_id?.toLowerCase().includes(searchTerm) ||
+        enrollment.team_id?.toLowerCase().includes(searchTerm)
       )
     }
     return true
@@ -485,8 +509,8 @@ const EnrollmentRow = ({ enrollment, tournament, userProfile, onViewDetails, onA
         <div className="flex items-center space-x-2">
           <GiTrophyCup className="w-4 h-4 text-cyan-400" />
           <div>
-            <div className="text-white font-medium">{tournament?.title || 'Unknown Tournament'}</div>
-            <div className="text-gray-400 text-sm">{tournament?.game_name || 'N/A'}</div>
+            <div className="text-white font-medium">{tournament?.title}</div>
+            <div className="text-gray-400 text-sm">{tournament?.game_name}</div>
           </div>
         </div>
       </td>
@@ -505,7 +529,7 @@ const EnrollmentRow = ({ enrollment, tournament, userProfile, onViewDetails, onA
         <div>
           <div className="text-white font-medium flex items-center space-x-2">
             <FaMoneyBillWave className="w-3 h-3 text-green-400" />
-            <span>₹{tournament?.joining_fee || '0'}</span>
+            <span>₹{tournament?.joining_fee}</span>
           </div>
           <div className="text-gray-400 text-sm font-mono text-xs">
             {enrollment.transaction_id}
@@ -517,7 +541,7 @@ const EnrollmentRow = ({ enrollment, tournament, userProfile, onViewDetails, onA
         {getStatusBadge(enrollment.payment_status)}
         {enrollment.team_id && (
           <div className="text-cyan-400 text-sm font-mono mt-1">
-            {enrollment.team_id}
+            Team: {enrollment.team_id}
           </div>
         )}
       </td>
@@ -596,7 +620,7 @@ const EnrollmentDetailsModal = ({ enrollment, tournament, userProfile, onClose, 
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white">Enrollment Details</h2>
-              <p className="text-cyan-400">{tournament?.title || 'Unknown Tournament'}</p>
+              <p className="text-cyan-400">{tournament?.title}</p>
             </div>
             <button 
               onClick={onClose}
@@ -636,17 +660,17 @@ const EnrollmentDetailsModal = ({ enrollment, tournament, userProfile, onClose, 
                 <div className="space-y-3">
                   <div>
                     <label className="text-gray-400 text-sm">Username</label>
-                    <p className="text-white font-semibold">{userProfile?.username || 'N/A'}</p>
+                    <p className="text-white font-semibold">{userProfile?.username}</p>
                   </div>
                   
                   <div>
                     <label className="text-gray-400 text-sm">Email</label>
-                    <p className="text-white font-semibold">{userProfile?.email || 'N/A'}</p>
+                    <p className="text-white font-semibold">{userProfile?.email}</p>
                   </div>
                   
                   <div>
                     <label className="text-gray-400 text-sm">Gamer Tag</label>
-                    <p className="text-white font-semibold">{userProfile?.gamer_tag || 'N/A'}</p>
+                    <p className="text-white font-semibold">{userProfile?.gamer_tag}</p>
                   </div>
                 </div>
               </div>
@@ -671,7 +695,7 @@ const EnrollmentDetailsModal = ({ enrollment, tournament, userProfile, onClose, 
                   
                   <div>
                     <label className="text-gray-400 text-sm">Tournament</label>
-                    <p className="text-white font-semibold">{tournament?.title || 'Unknown Tournament'}</p>
+                    <p className="text-white font-semibold">{tournament?.title}</p>
                   </div>
                 </div>
               </div>
@@ -749,7 +773,7 @@ const EnrollmentDetailsModal = ({ enrollment, tournament, userProfile, onClose, 
                   
                   <div>
                     <label className="text-gray-400 text-sm">Amount Paid</label>
-                    <p className="text-green-400 font-bold text-xl">₹{tournament?.joining_fee || '0'}</p>
+                    <p className="text-green-400 font-bold text-xl">₹{tournament?.joining_fee}</p>
                   </div>
                   
                   <div>
@@ -799,7 +823,7 @@ const EnrollmentDetailsModal = ({ enrollment, tournament, userProfile, onClose, 
                   
                   <div>
                     <label className="text-gray-400 text-sm">Email</label>
-                    <p className="text-white font-semibold">{userProfile?.email || 'N/A'}</p>
+                    <p className="text-white font-semibold">{userProfile?.email}</p>
                   </div>
                 </div>
 
