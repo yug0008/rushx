@@ -27,6 +27,7 @@ const Header = () => {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileNotifications, setShowMobileNotifications] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { user, signOut } = useAuth();
 
@@ -39,23 +40,111 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Fetch notifications
+  // Fetch notifications with visibility change handler
   useEffect(() => {
     if (user) {
       fetchNotifications();
+      
+      // Set up real-time subscription for notifications
+      const subscription = supabase
+        .channel('notifications')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            // Add new notification to the top
+            setNotifications(prev => [payload.new, ...prev.slice(0, 4)]);
+          }
+        )
+        .subscribe();
+
+      // Refetch when tab becomes visible again
+      const handleVisibilityChange = () => {
+        if (!document.hidden) {
+          fetchNotifications();
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      return () => {
+        subscription.unsubscribe();
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    } else {
+      setNotifications([]);
     }
   }, [user]);
 
   const fetchNotifications = async () => {
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('read', false)
-      .order('created_at', { ascending: false })
-      .limit(5);
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('read', false)
+        .order('created_at', { ascending: false })
+        .limit(5);
 
-    setNotifications(data || []);
+      if (error) {
+        console.error('Error fetching notifications:', error);
+        return;
+      }
+
+      setNotifications(data || []);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const markAsRead = async (notificationId) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+
+      if (error) {
+        console.error('Error marking notification as read:', error);
+        return;
+      }
+
+      // Remove from local state
+      setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (!user || notifications.length === 0) return;
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', user.id)
+        .eq('read', false);
+
+      if (error) {
+        console.error('Error marking all notifications as read:', error);
+        return;
+      }
+
+      setNotifications([]);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
   };
 
   const navItems = [
@@ -71,6 +160,8 @@ const Header = () => {
   const handleSignOut = async () => {
     await signOut();
     setIsProfileDropdownOpen(false);
+    setShowNotifications(false);
+    setShowMobileNotifications(false);
     router.push('/');
   };
 
@@ -139,22 +230,41 @@ const Header = () => {
                     <div className="absolute top-full right-0 mt-2 w-80 bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-xl shadow-2xl shadow-cyan-500/20 overflow-hidden z-50">
                       <div className="p-4 border-b border-cyan-500/20 flex items-center justify-between">
                         <h3 className="text-white font-semibold">Notifications</h3>
-                        <Link 
-                          href="/notifications"
-                          className="text-cyan-400 text-sm hover:text-cyan-300"
-                          onClick={() => setShowNotifications(false)}
-                        >
-                          View All
-                        </Link>
+                        <div className="flex items-center space-x-2">
+                          {notifications.length > 0 && (
+                            <button
+                              onClick={markAllAsRead}
+                              className="text-cyan-400 text-sm hover:text-cyan-300 transition-colors"
+                            >
+                              Mark All Read
+                            </button>
+                          )}
+                          <Link 
+                            href="/notifications"
+                            className="text-cyan-400 text-sm hover:text-cyan-300 transition-colors"
+                            onClick={() => setShowNotifications(false)}
+                          >
+                            View All
+                          </Link>
+                        </div>
                       </div>
                       <div className="max-h-96 overflow-y-auto">
-                        {notifications.length === 0 ? (
+                        {isLoading ? (
+                          <div className="p-4 text-center text-gray-400">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-500 mx-auto"></div>
+                            <p className="mt-2">Loading notifications...</p>
+                          </div>
+                        ) : notifications.length === 0 ? (
                           <div className="p-4 text-center text-gray-400">
                             No new notifications
                           </div>
                         ) : (
                           notifications.map(notification => (
-                            <div key={notification.id} className="p-4 border-b border-gray-700/50 hover:bg-gray-800/50 transition-colors duration-300">
+                            <div 
+                              key={notification.id} 
+                              className="p-4 border-b border-gray-700/50 hover:bg-gray-800/50 transition-colors duration-300 cursor-pointer"
+                              onClick={() => markAsRead(notification.id)}
+                            >
                               <div className="text-white font-medium text-sm mb-1">
                                 {notification.title}
                               </div>
@@ -227,17 +337,19 @@ const Header = () => {
             {/* Mobile Menu Button + Notifications */}
             <div className="lg:hidden flex items-center space-x-2">
               {user && (
-                <button
-                  onClick={() => setShowMobileNotifications(!showMobileNotifications)}
-                  className="relative p-2 text-white hover:text-cyan-400 transition-colors duration-300"
-                >
-                  <FaBell className="w-5 h-5" />
-                  {notifications.length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                      {notifications.length}
-                    </span>
-                  )}
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowMobileNotifications(!showMobileNotifications)}
+                    className="relative p-2 text-white hover:text-cyan-400 transition-colors duration-300"
+                  >
+                    <FaBell className="w-5 h-5" />
+                    {notifications.length > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                        {notifications.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
               )}
               <button
                 className="flex items-center justify-center w-8 h-8 text-white hover:text-cyan-400 transition-colors duration-300"
@@ -260,22 +372,41 @@ const Header = () => {
               <div className="bg-gray-800/50 rounded-xl p-4 border border-cyan-500/30">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-white font-semibold">Notifications</h3>
-                  <Link 
-                    href="/notifications"
-                    className="text-cyan-400 text-sm hover:text-cyan-300"
-                    onClick={() => setShowMobileNotifications(false)}
-                  >
-                    View All
-                  </Link>
+                  <div className="flex items-center space-x-2">
+                    {notifications.length > 0 && (
+                      <button
+                        onClick={markAllAsRead}
+                        className="text-cyan-400 text-sm hover:text-cyan-300 transition-colors"
+                      >
+                        Mark All Read
+                      </button>
+                    )}
+                    <Link 
+                      href="/notifications"
+                      className="text-cyan-400 text-sm hover:text-cyan-300 transition-colors"
+                      onClick={() => setShowMobileNotifications(false)}
+                    >
+                      View All
+                    </Link>
+                  </div>
                 </div>
                 <div className="max-h-64 overflow-y-auto">
-                  {notifications.length === 0 ? (
+                  {isLoading ? (
+                    <div className="text-center text-gray-400 py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-500 mx-auto"></div>
+                      <p className="mt-2 text-sm">Loading notifications...</p>
+                    </div>
+                  ) : notifications.length === 0 ? (
                     <div className="text-center text-gray-400 py-4">
                       No new notifications
                     </div>
                   ) : (
                     notifications.map(notification => (
-                      <div key={notification.id} className="p-3 border-b border-gray-700/50 last:border-b-0 hover:bg-gray-700/30 transition-colors duration-300 rounded-lg mb-2">
+                      <div 
+                        key={notification.id} 
+                        className="p-3 border-b border-gray-700/50 last:border-b-0 hover:bg-gray-700/30 transition-colors duration-300 rounded-lg mb-2 cursor-pointer"
+                        onClick={() => markAsRead(notification.id)}
+                      >
                         <div className="text-white font-medium text-sm mb-1">
                           {notification.title}
                         </div>

@@ -48,14 +48,36 @@ const ProfilePage = () => {
     teamType: 'Solo'
   })
 
-  // Load profile data
   useEffect(() => {
-    if (!user) {
-      router.push('/')
-      return
+  if (!user) return
+
+  const handleVisibility = async () => {
+    if (!document.hidden) {
+      try {
+        // Optional: refresh Supabase session
+        const { data, error } = await supabase.auth.getSession()
+        if (error) throw error
+
+        // Refetch profile & tournaments
+        loadProfileData()
+      } catch (err) {
+        console.error("Error on refetch after tab focus:", err)
+      }
     }
-    loadProfileData()
-  }, [user, router])
+  }
+
+  window.addEventListener("visibilitychange", handleVisibility)
+  window.addEventListener("focus", handleVisibility)
+
+  // Initial load
+  loadProfileData()
+
+  return () => {
+    window.removeEventListener("visibilitychange", handleVisibility)
+    window.removeEventListener("focus", handleVisibility)
+  }
+}, [user])
+
 
   const loadProfileData = async () => {
     try {
