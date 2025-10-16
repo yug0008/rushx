@@ -222,8 +222,8 @@ const ResultsPage = () => {
 
   const getStatusBadge = (result) => {
     return (
-      <div className="flex items-center space-x-2 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
-        <FaCheckCircle className="w-3 h-3" />
+      <div className="flex items-center space-x-2 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm mobile:text-xs mobile:px-2 mobile:py-0.5">
+        <FaCheckCircle className="w-3 h-3 mobile:w-2 mobile:h-2" />
         <span>Completed</span>
       </div>
     )
@@ -249,8 +249,8 @@ const ResultsPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-cyan-900/20 pt-20 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-cyan-400 font-semibold">Loading Tournament Results...</p>
+          <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4 mobile:w-12 mobile:h-12"></div>
+          <p className="text-cyan-400 font-semibold mobile:text-sm">Loading Tournament Results...</p>
         </div>
       </div>
     )
@@ -260,81 +260,104 @@ const ResultsPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-cyan-900/20 pt-20">
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl mobile:-top-20 mobile:-right-20 mobile:w-40 mobile:h-40"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl mobile:-bottom-20 mobile:-left-20 mobile:w-40 mobile:h-40"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl mobile:w-48 mobile:h-48"></div>
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-8">
+      <div className="relative z-10 container mx-auto px-4 py-8 mobile:px-3 mobile:py-6">
         {/* Header Section */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center">
-              <GiTrophyCup className="w-6 h-6 text-white" />
+        <div className="text-center mb-12 mobile:mb-8">
+          <div className="flex items-center justify-center space-x-3 mb-4 mobile:space-x-2">
+            <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center mobile:w-10 mobile:h-10 mobile:rounded-xl">
+              <GiTrophyCup className="w-6 h-6 text-white mobile:w-5 mobile:h-5" />
             </div>
-            <h1 className="text-5xl lg:text-7xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+            <h1 className="text-2xl lg:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent mobile:text-3xl">
               Tournament Results
             </h1>
           </div>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto mobile:text-base mobile:px-2">
             Celebrating champions and their epic victories across all tournaments
           </p>
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6 text-center">
-            <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <GiTrophyCup className="w-6 h-6 text-cyan-400" />
-            </div>
-            <div className="text-3xl font-bold text-white mb-1">{results.length}</div>
-            <div className="text-gray-400">Tournaments Completed</div>
-          </div>
+<div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12 max-[450px]:gap-3 max-[450px]:mb-6">
+  {/* Tournaments Completed */}
+  <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6 text-center 
+                  max-[450px]:p-3 max-[450px]:rounded-lg">
+    <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center mx-auto mb-3 
+                    max-[450px]:w-8 max-[450px]:h-8 max-[450px]:mb-2">
+      <GiTrophyCup className="w-6 h-6 text-cyan-400 max-[450px]:w-4 max-[450px]:h-4" />
+    </div>
+    <div className="text-3xl font-bold text-white mb-1 max-[450px]:text-xl">
+      {results.length}
+    </div>
+    <div className="text-gray-400 max-[450px]:text-xs">
+      Tournaments Completed
+    </div>
+  </div>
 
-          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6 text-center">
-            <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <FaRupeeSign className="w-6 h-6 text-purple-400" />
-            </div>
-            <div className="text-3xl font-bold text-white mb-1">
-              {formatCurrency(results.reduce((sum, result) => sum + result.tournament.total_prize_pool, 0)).replace('₹', '₹ ')}
-            </div>
-            <div className="text-gray-400">Total Prize Pool</div>
-          </div>
+  {/* Total Prize Pool */}
+  <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6 text-center 
+                  max-[450px]:p-3 max-[450px]:rounded-lg">
+    <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mx-auto mb-3 
+                    max-[450px]:w-8 max-[450px]:h-8 max-[450px]:mb-2">
+      <FaRupeeSign className="w-6 h-6 text-purple-400 max-[450px]:w-4 max-[450px]:h-4" />
+    </div>
+    <div className="text-3xl font-bold text-white mb-1 max-[450px]:text-xl">
+      {formatCurrency(results.reduce((sum, result) => sum + result.tournament.total_prize_pool, 0)).replace('₹', '₹ ')}
+    </div>
+    <div className="text-gray-400 max-[450px]:text-xs">
+      Total Prize Pool
+    </div>
+  </div>
 
-          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-green-500/30 p-6 text-center">
-            <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <FaUsers className="w-6 h-6 text-green-400" />
-            </div>
-            <div className="text-3xl font-bold text-white mb-1">
-              {results.reduce((sum, result) => sum + result.total_participants, 0)}
-            </div>
-            <div className="text-gray-400">Total Participants</div>
-          </div>
+  {/* Total Participants */}
+  <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-green-500/30 p-6 text-center 
+                  max-[450px]:p-3 max-[450px]:rounded-lg">
+    <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mx-auto mb-3 
+                    max-[450px]:w-8 max-[450px]:h-8 max-[450px]:mb-2">
+      <FaUsers className="w-6 h-6 text-green-400 max-[450px]:w-4 max-[450px]:h-4" />
+    </div>
+    <div className="text-3xl font-bold text-white mb-1 max-[450px]:text-xl">
+      {results.reduce((sum, result) => sum + result.total_participants, 0)}
+    </div>
+    <div className="text-gray-400 max-[450px]:text-xs">
+      Total Participants
+    </div>
+  </div>
 
-          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-yellow-500/30 p-6 text-center">
-            <div className="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <FaCrown className="w-6 h-6 text-yellow-400" />
-            </div>
-            <div className="text-3xl font-bold text-white mb-1">
-              {new Set(results.map(result => result.winner_id)).size}
-            </div>
-            <div className="text-gray-400">Unique Champions</div>
-          </div>
+  {/* Unique Champions */}
+  <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-yellow-500/30 p-6 text-center 
+                  max-[450px]:p-3 max-[450px]:rounded-lg">
+    <div className="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center mx-auto mb-3 
+                    max-[450px]:w-8 max-[450px]:h-8 max-[450px]:mb-2">
+      <FaCrown className="w-6 h-6 text-yellow-400 max-[450px]:w-4 max-[450px]:h-4" />
+    </div>
+    <div className="text-3xl font-bold text-white mb-1 max-[450px]:text-xl">
+      {new Set(results.map(result => result.winner_id)).size}
+    </div>
+    <div className="text-gray-400 max-[450px]:text-xs">
+      Unique Champions
+    </div>
+  </div>
+
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6 mb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6 mb-8 mobile:p-4 mobile:rounded-xl mobile:mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mobile:gap-3">
             {/* Search */}
             <div className="lg:col-span-2">
               <div className="relative">
-                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 mobile:left-3 mobile:w-3 mobile:h-3" />
                 <input
                   type="text"
                   placeholder="Search tournaments, games, or champions..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300 mobile:pl-10 mobile:py-2 mobile:text-sm mobile:rounded-lg"
                 />
               </div>
             </div>
@@ -344,7 +367,7 @@ const ResultsPage = () => {
               <select
                 value={filters.game}
                 onChange={(e) => setFilters(prev => ({ ...prev, game: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition-colors duration-300"
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition-colors duration-300 mobile:py-2 mobile:text-sm mobile:rounded-lg"
               >
                 <option value="all">All Games</option>
                 <option value="valorant">Valorant</option>
@@ -358,7 +381,7 @@ const ResultsPage = () => {
 
             {/* Results Count */}
             <div className="flex items-center justify-end">
-              <span className="text-cyan-400 font-semibold">
+              <span className="text-cyan-400 font-semibold mobile:text-sm">
                 {filteredResults.length} {filteredResults.length === 1 ? 'Result' : 'Results'}
               </span>
             </div>
@@ -366,7 +389,7 @@ const ResultsPage = () => {
         </div>
 
         {/* Results Grid */}
-        <div className="space-y-6">
+        <div className="space-y-6 mobile:space-y-4">
           {filteredResults.map((result) => (
             <TournamentResultCard 
               key={result.id} 
@@ -378,18 +401,18 @@ const ResultsPage = () => {
 
         {/* Empty State */}
         {filteredResults.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-32 h-32 bg-gradient-to-r from-cyan-500/10 to-purple-600/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <GiTrophyCup className="w-16 h-16 text-gray-400" />
+          <div className="text-center py-16 mobile:py-12">
+            <div className="w-32 h-32 bg-gradient-to-r from-cyan-500/10 to-purple-600/10 rounded-full flex items-center justify-center mx-auto mb-6 mobile:w-24 mobile:h-24 mobile:mb-4">
+              <GiTrophyCup className="w-16 h-16 text-gray-400 mobile:w-12 mobile:h-12" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-2">No Results Found</h3>
-            <p className="text-gray-400 mb-6">No tournament results match your search criteria</p>
+            <h3 className="text-2xl font-bold text-white mb-2 mobile:text-xl">No Results Found</h3>
+            <p className="text-gray-400 mb-6 mobile:text-sm mobile:mb-4">No tournament results match your search criteria</p>
             <button
               onClick={() => {
                 setSearchTerm('')
                 setFilters({ game: 'all', status: 'completed' })
               }}
-              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300"
+              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 mobile:px-4 mobile:py-2 mobile:text-sm mobile:rounded-lg"
             >
               Clear Search
             </button>
@@ -411,87 +434,109 @@ const ResultsPage = () => {
 // Tournament Result Card Component
 const TournamentResultCard = ({ result, onSelect }) => {
   return (
-    <div 
-      className="group bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 overflow-hidden hover:border-cyan-500/60 hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-500 cursor-pointer"
+    <div
+      className="group bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 overflow-hidden 
+                 hover:border-cyan-500/60 hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-500 cursor-pointer 
+                 mobile:rounded-xl max-[450px]:rounded-lg"
       onClick={onSelect}
     >
-      <div className="p-6">
+      <div className="p-6 mobile:p-4 max-[450px]:p-3">
         {/* Header */}
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-lg">
+        <div className="flex items-start justify-between mb-6 mobile:mb-4 max-[450px]:mb-3">
+          <div className="flex items-center space-x-4 mobile:space-x-3 max-[450px]:space-x-2">
+            <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-lg 
+                            mobile:w-10 mobile:h-10 mobile:text-base max-[450px]:w-8 max-[450px]:h-8 max-[450px]:text-sm">
               {getGameIcon(result.tournament.game_name)}
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-white group-hover:text-cyan-400 transition-colors duration-300">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xl font-bold text-white group-hover:text-cyan-400 transition-colors duration-300 
+                             mobile:text-base truncate max-[450px]:text-sm">
                 {result.tournament.title}
               </h3>
-              <div className="flex items-center space-x-4 text-sm text-gray-400 mt-1">
+              <div className="flex items-center space-x-4 text-sm text-gray-400 mt-1 
+                              mobile:space-x-2 mobile:text-xs max-[450px]:space-x-1 max-[450px]:text-[10px]">
                 <div className="flex items-center space-x-1">
-                  <FaCalendar className="w-3 h-3" />
+                  <FaCalendar className="w-3 h-3 mobile:w-2 mobile:h-2 max-[450px]:w-2 max-[450px]:h-2" />
                   <span>{formatDate(result.completed_at)}</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <FaUsers className="w-3 h-3" />
+                  <FaUsers className="w-3 h-3 mobile:w-2 mobile:h-2 max-[450px]:w-2 max-[450px]:h-2" />
                   <span>{result.total_participants} Participants</span>
                 </div>
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            {getStatusBadge(result)}
-            <FaExternalLinkAlt className="w-4 h-4 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          <div className="flex items-center space-x-3 mobile:space-x-2 max-[450px]:space-x-1">
+            {/* ✅ Fixed Completed Badge */}
+            {result.status?.toLowerCase() === "completed" ? (
+              <div className="flex items-center bg-green-500/20 text-green-400 px-3 py-1.5 rounded-full text-sm font-semibold 
+                              mobile:px-2 mobile:py-1">
+                <FaCheckCircle className="w-4 h-4 mobile:w-3 mobile:h-3" />
+                <span className="ml-2 hidden sm:inline">Completed</span>
+              </div>
+            ) : (
+              getStatusBadge(result)
+            )}
+            <FaExternalLinkAlt className="w-4 h-4 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 
+                                         mobile:w-3 mobile:h-3 max-[450px]:w-2.5 max-[450px]:h-2.5" />
           </div>
         </div>
 
         {/* Podium Preview */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-4 mb-6 
+                        mobile:gap-2 mobile:mb-4 max-[450px]:gap-1.5 max-[450px]:mb-3">
           {/* Runner Up */}
           <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center mx-auto mb-2 border-2 border-gray-400">
-              <FaMedal className="w-6 h-6 text-white" />
+            <div className="w-16 h-16 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center mx-auto mb-2 
+                            border-2 border-gray-400 mobile:w-12 mobile:h-12 mobile:mb-1 max-[450px]:w-10 max-[450px]:h-10 max-[450px]:mb-0.5">
+              <FaMedal className="w-6 h-6 text-white mobile:w-4 mobile:h-4 max-[450px]:w-3.5 max-[450px]:h-3.5" />
             </div>
-            <div className="text-sm font-semibold text-gray-300">2nd</div>
-            <div className="text-xs text-gray-400 truncate">{result.runner_up?.username || 'TBD'}</div>
-            <div className="text-xs text-cyan-400 mt-1">
+            <div className="text-sm font-semibold text-gray-300 mobile:text-xs max-[450px]:text-[10px]">2nd</div>
+            <div className="text-xs text-gray-400 truncate mobile:text-[11px] max-[450px]:text-[9px]">{result.runner_up?.username || 'TBD'}</div>
+            <div className="text-xs text-cyan-400 mt-1 mobile:text-[11px] max-[450px]:text-[9px]">
               {formatCurrency(result.prize_distribution.runner_up).replace('₹', '₹ ')}
             </div>
           </div>
 
           {/* Winner */}
-          <div className="text-center transform -translate-y-4">
-            <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-2 border-2 border-yellow-400 shadow-lg shadow-yellow-500/25">
-              <FaCrown className="w-8 h-8 text-white" />
+          <div className="text-center transform -translate-y-4 mobile:-translate-y-2 max-[450px]:-translate-y-1">
+            <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-2 
+                            border-2 border-yellow-400 shadow-lg shadow-yellow-500/25 
+                            mobile:w-16 mobile:h-16 mobile:mb-1 max-[450px]:w-12 max-[450px]:h-12 max-[450px]:mb-0.5">
+              <FaCrown className="w-8 h-8 text-white mobile:w-6 mobile:h-6 max-[450px]:w-5 max-[450px]:h-5" />
             </div>
-            <div className="text-sm font-semibold text-yellow-300">1st</div>
-            <div className="text-xs text-white font-bold truncate">{result.winner?.username || 'TBD'}</div>
-            <div className="text-xs text-yellow-400 mt-1 font-semibold">
+            <div className="text-sm font-semibold text-yellow-300 mobile:text-xs max-[450px]:text-[10px]">1st</div>
+            <div className="text-xs text-white font-bold truncate mobile:text-[11px] max-[450px]:text-[9px]">{result.winner?.username || 'TBD'}</div>
+            <div className="text-xs text-yellow-400 mt-1 font-semibold mobile:text-[11px] max-[450px]:text-[9px]">
               {formatCurrency(result.prize_distribution.winner).replace('₹', '₹ ')}
             </div>
           </div>
 
           {/* Third Place */}
           <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-2 border-2 border-orange-400">
-              <FaAward className="w-6 h-6 text-white" />
+            <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-2 
+                            border-2 border-orange-400 mobile:w-12 mobile:h-12 mobile:mb-1 max-[450px]:w-10 max-[450px]:h-10 max-[450px]:mb-0.5">
+              <FaAward className="w-6 h-6 text-white mobile:w-4 mobile:h-4 max-[450px]:w-3.5 max-[450px]:h-3.5" />
             </div>
-            <div className="text-sm font-semibold text-gray-300">3rd</div>
-            <div className="text-xs text-gray-400 truncate">{result.third_place?.username || 'TBD'}</div>
-            <div className="text-xs text-cyan-400 mt-1">
+            <div className="text-sm font-semibold text-gray-300 mobile:text-xs max-[450px]:text-[10px]">3rd</div>
+            <div className="text-xs text-gray-400 truncate mobile:text-[11px] max-[450px]:text-[9px]">{result.third_place?.username || 'TBD'}</div>
+            <div className="text-xs text-cyan-400 mt-1 mobile:text-[11px] max-[450px]:text-[9px]">
               {formatCurrency(result.prize_distribution.third_place).replace('₹', '₹ ')}
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-700/50">
-          <div className="flex items-center space-x-2 text-cyan-400">
-            <FaRupeeSign className="w-4 h-4" />
-            <span className="font-semibold">
+        <div className="flex items-center justify-between pt-4 border-t border-gray-700/50 
+                        mobile:pt-3 mobile:flex-col mobile:gap-2 mobile:items-start max-[450px]:pt-2 max-[450px]:gap-1">
+          <div className="flex items-center space-x-2 text-cyan-400 mobile:space-x-1 max-[450px]:space-x-0.5">
+            <FaRupeeSign className="w-4 h-4 mobile:w-3 mobile:h-3 max-[450px]:w-2.5 max-[450px]:h-2.5" />
+            <span className="font-semibold mobile:text-sm max-[450px]:text-[11px]">
               {formatCurrency(result.tournament.total_prize_pool).replace('₹', '₹ ')} Prize Pool
             </span>
           </div>
-          <div className="text-gray-400 text-sm">
+          <div className="text-gray-400 text-sm mobile:text-xs max-[450px]:text-[10px]">
             Final Score: <span className="text-white font-semibold">{result.final_score}</span>
           </div>
         </div>
@@ -525,104 +570,161 @@ const TournamentResultModal = ({ result, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-gray-900/95 backdrop-blur-xl rounded-3xl border border-cyan-500/30 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="p-8 border-b border-gray-700/50">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl">
-                {getGameIcon(result.tournament.game_name)}
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-white">{result.tournament.title}</h2>
-                <div className="flex items-center space-x-4 text-gray-400 mt-2">
-                  <div className="flex items-center space-x-2">
-                    <FaCalendar className="w-4 h-4" />
-                    <span>Completed {formatDate(result.completed_at)}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <FaUsers className="w-4 h-4" />
-                    <span>{result.total_participants} Participants</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="w-10 h-10 bg-gray-800/50 rounded-xl flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700/50 transition-all duration-300"
-            >
-              ×
-            </button>
-          </div>
+   <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 mobile:p-2">
+  <div className="bg-gray-900/95 backdrop-blur-xl rounded-3xl border border-cyan-500/30 max-w-4xl w-full max-h-[90vh] overflow-y-auto mobile:rounded-2xl mobile:max-h-[95vh]">
+    {/* Header */}
+    <div className="p-8 border-b border-gray-700/50 mobile:p-4">
+<div className="flex items-center justify-between mb-6 mobile:mb-4">
+  {/* Left Section */}
+  <div className="flex items-center space-x-4 mobile:space-x-2 flex-1 min-w-0">
+    {/* Game Icon */}
+    <div className="w-16 h-16 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl 
+                    mobile:w-10 mobile:h-10 mobile:text-base mobile:rounded-lg flex-shrink-0">
+      {getGameIcon(result.tournament.game_name)}
+    </div>
 
-          {/* Final Score */}
-          <div className="bg-gradient-to-r from-cyan-500/10 to-purple-600/10 rounded-2xl p-6 border border-cyan-500/20">
-            <div className="text-center">
-              <div className="text-sm text-cyan-400 font-semibold mb-2">CHAMPIONSHIP MATCH</div>
-              <div className="text-4xl font-bold text-white">{result.final_score}</div>
-              <div className="text-gray-400 mt-2">Final Score</div>
-            </div>
-          </div>
+    {/* Tournament Info */}
+    <div className="flex-1 min-w-0">
+      <h2 className="text-3xl font-bold text-white truncate mobile:text-1xl mobile:font-semibold">
+  {result.tournament.title}
+</h2>
+
+
+      {/* Sub Info */}
+      <div className="flex items-center space-x-4 text-gray-400 mt-2 mobile:space-x-2 mobile:mt-1 mobile:text-xs">
+        {/* Completed Date */}
+        <div className="flex items-center space-x-2 mobile:space-x-1">
+          <FaCalendar className="w-4 h-4 mobile:w-3 mobile:h-3 flex-shrink-0" />
+          <span className="whitespace-nowrap truncate">
+            <span className="hidden mobile:inline">{formatDate(result.completed_at)}</span>
+            <span className="inline mobile:hidden"> {formatDate(result.completed_at)}</span>
+          </span>
         </div>
 
-        {/* Podium Section */}
-        <div className="p-8">
-          <h3 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
-            <GiPodium className="w-6 h-6 text-cyan-400" />
-            <span>Tournament Podium</span>
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {podiumPlayers.map(({ position, player, prize, icon: Icon, color }) => (
-              <div key={position} className={`text-center transform ${position === 1 ? '-translate-y-4' : ''}`}>
-                <div className={`w-24 h-24 bg-gradient-to-br ${getColorClasses(color)} rounded-full flex items-center justify-center mx-auto mb-4 border-4 shadow-2xl ${position === 1 ? 'shadow-yellow-500/25' : ''}`}>
-                  <Icon className="w-10 h-10" />
-                </div>
-                <div className={`text-lg font-semibold mb-2 ${position === 1 ? 'text-yellow-300' : 'text-gray-300'}`}>
-                  {position === 1 ? 'CHAMPION' : `${position}${getOrdinalSuffix(position)}`} PLACE
-                </div>
-                <div className="text-xl font-bold text-white mb-2">{player?.username || 'TBD'}</div>
-                <div className="text-sm text-gray-400 mb-2">{player?.gamer_tag || ''}</div>
-                <div className={`text-lg font-bold ${position === 1 ? 'text-yellow-400' : 'text-cyan-400'}`}>
-                  {formatCurrency(prize).replace('₹', '₹ ')}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Prize Distribution */}
-          <div className="bg-gray-800/30 rounded-2xl p-6 border border-gray-700/50">
-            <h4 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
-              <FaRupeeSign className="w-5 h-5 text-cyan-400" />
-              <span>Prize Distribution</span>
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {Object.entries(result.prize_distribution).map(([position, prize]) => (
-                <div key={position} className="text-center">
-                  <div className="text-sm text-gray-400 capitalize">
-                    {position.replace('_', ' ')}
-                  </div>
-                  <div className="text-lg font-bold text-cyan-400">
-                    {formatCurrency(prize).replace('₹', '₹ ')}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* Participants */}
+        <div className="flex items-center space-x-2 mobile:space-x-1">
+          <FaUsers className="w-4 h-4 mobile:w-3 mobile:h-3 flex-shrink-0" />
+          <span className="truncate">
+            <span className="hidden mobile:inline">{result.total_participants}</span>
+            <span className="inline mobile:hidden">{result.total_participants} </span>
+          </span>
         </div>
+      </div>
+    </div>
+  </div>
 
-        {/* Total Prize Pool */}
-        <div className="p-8 bg-gradient-to-r from-cyan-500/10 to-purple-600/10 border-t border-gray-700/50">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-white mb-2">
-              {formatCurrency(result.tournament.total_prize_pool).replace('₹', '₹ ')}
-            </div>
-            <div className="text-cyan-400 font-semibold">Total Prize Pool</div>
+  {/* Close Button */}
+  <button
+    onClick={onClose}
+    className="w-10 h-10 bg-gray-800/50 rounded-xl flex items-center justify-center text-gray-400 
+               hover:text-white hover:bg-gray-700/50 transition-all duration-300 
+               mobile:w-7 mobile:h-7 mobile:rounded-md mobile:text-base flex-shrink-0"
+  >
+    ×
+  </button>
+</div>
+
+
+
+      {/* Final Score */}
+      <div className="bg-gradient-to-r from-cyan-500/10 to-purple-600/10 rounded-2xl p-6 border border-cyan-500/20 mobile:p-4 mobile:rounded-xl">
+        <div className="text-center">
+          <div className="text-sm text-cyan-400 font-semibold mb-2 mobile:text-xs">
+            CHAMPIONSHIP MATCH
+          </div>
+          <div className="text-4xl font-bold text-white mobile:text-2xl tracking-wide">
+            {result.final_score}
+          </div>
+          <div className="text-gray-400 mt-2 mobile:text-sm mobile:mt-1">
+            Final Score
           </div>
         </div>
       </div>
     </div>
+
+    {/* Podium Section */}
+<div className="p-8 mobile:p-4">
+  <h3 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2 mobile:text-lg mobile:mb-4">
+    <GiPodium className="w-6 h-6 text-cyan-400 mobile:w-5 mobile:h-5" />
+    <span>Tournament Podium</span>
+  </h3>
+
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mobile:mb-6
+                  mobile:flex mobile:space-x-4 mobile:overflow-x-auto mobile:scrollbar-thin mobile:scrollbar-thumb-cyan-500/40 mobile:scrollbar-track-gray-900/20">
+    {podiumPlayers.map(({ position, player, prize, icon: Icon, color }) => (
+      <div 
+        key={position} 
+        className={`text-center transform transition-transform duration-300 
+                    ${position === 1 ? '-translate-y-4 mobile:-translate-y-2' : ''} 
+                    flex-shrink-0 mobile:w-24`}>
+        {/* Icon */}
+        <div className={`w-24 h-24 bg-gradient-to-br ${getColorClasses(color)} rounded-full flex items-center justify-center mx-auto mb-4 border-4 shadow-2xl 
+                        ${position === 1 ? 'shadow-yellow-500/25' : 'shadow-cyan-500/10'}
+                        mobile:w-16 mobile:h-16 mobile:mb-2 mobile:border-2`}>
+          <Icon className="w-10 h-10 mobile:w-6 mobile:h-6 text-white" />
+        </div>
+
+        {/* Position */}
+        <div className={`text-lg font-semibold mb-2 
+                        ${position === 1 ? 'text-yellow-300' : 'text-gray-300'} 
+                        mobile:text-xs`}>
+          {position === 1 ? 'CHAMPION' : `${position}${getOrdinalSuffix(position)}`} PLACE
+        </div>
+
+        {/* Player Name */}
+        <div className="text-xl font-bold text-white mb-2 mobile:text-sm truncate px-2">
+          {player?.username || 'TBD'}
+        </div>
+
+        {/* Gamer Tag */}
+        <div className="text-sm text-gray-400 mb-2 mobile:text-xs truncate px-2">
+          {player?.gamer_tag || ''}
+        </div>
+
+        {/* Prize */}
+        <div className={`text-lg font-bold ${position === 1 ? 'text-yellow-400' : 'text-cyan-400'} mobile:text-sm`}>
+          {formatCurrency(prize).replace('₹', '₹ ')}
+        </div>
+      </div>
+    ))}
+  </div>
+
+
+
+      {/* Prize Distribution */}
+      <div className="bg-gray-800/30 rounded-2xl p-6 border border-gray-700/50 mobile:p-4 mobile:rounded-xl">
+        <h4 className="text-xl font-bold text-white mb-4 flex items-center space-x-2 mobile:text-lg mobile:mb-3">
+          <FaRupeeSign className="w-5 h-5 text-cyan-400 mobile:w-4 mobile:h-4" />
+          <span>Prize Distribution</span>
+        </h4>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mobile:grid-cols-2 mobile:gap-3">
+          {Object.entries(result.prize_distribution).map(([position, prize]) => (
+            <div key={position} className="text-center p-2 mobile:p-2 bg-gray-700/20 rounded-lg">
+              <div className="text-sm text-gray-400 capitalize mobile:text-xs">
+                {position.replace('_', ' ')}
+              </div>
+              <div className="text-lg font-bold text-cyan-400 mobile:text-sm">
+                {formatCurrency(prize).replace('₹', '₹ ')}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* Total Prize Pool */}
+    <div className="p-8 bg-gradient-to-r from-cyan-500/10 to-purple-600/10 border-t border-gray-700/50 mobile:p-4">
+      <div className="text-center">
+        <div className="text-2xl font-bold text-white mb-2 mobile:text-xl">
+          {formatCurrency(result.tournament.total_prize_pool).replace('₹', '₹ ')}
+        </div>
+        <div className="text-cyan-400 font-semibold mobile:text-sm">
+          Total Prize Pool
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
   )
 }
 
@@ -657,8 +759,8 @@ const formatCurrency = (amount) => {
 
 const getStatusBadge = (result) => {
   return (
-    <div className="flex items-center space-x-2 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
-      <FaCheckCircle className="w-3 h-3" />
+    <div className="flex items-center space-x-2 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm mobile:text-xs mobile:px-2 mobile:py-0.5">
+      <FaCheckCircle className="w-3 h-3 mobile:w-2 mobile:h-2" />
       <span>Completed</span>
     </div>
   )

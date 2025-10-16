@@ -158,7 +158,7 @@ const TournamentsPage = () => {
         <div className="container mx-auto px-4 py-12">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-5xl lg:text-7xl font-bold text-white mb-6">
+            <h1 className="text-3xl lg:text-6xl font-bold text-white mb-6">
               <span className="bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent">
                 Tournaments
               </span>
