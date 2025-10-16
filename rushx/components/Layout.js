@@ -36,7 +36,7 @@ const Layout = ({ children }) => {
               </div>
             </div>
             <div className="space-y-2">
-              <p className="text-cyan-400 font-semibold tracking-wider text-xl">NEXUS ESPORTS</p>
+              <p className="text-cyan-400 font-semibold tracking-wider text-xl">RUSHX ESPORTS</p>
               <p className="text-gray-400 text-sm">Loading elite gaming experience...</p>
             </div>
           </div>
