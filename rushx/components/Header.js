@@ -26,6 +26,7 @@ const Header = () => {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showMobileNotifications, setShowMobileNotifications] = useState(false);
   const router = useRouter();
   const { user, signOut } = useAuth();
 
@@ -223,21 +224,77 @@ const Header = () => {
               )}
             </div>
 
-            {/* Mobile Menu Button */}
-            <button
-              className="lg:hidden flex items-center justify-center w-8 h-8 text-white hover:text-cyan-400 transition-colors duration-300"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? (
-                <IoMdClose className="w-5 h-5" />
-              ) : (
-                <FaBars className="w-4 h-4" />
+            {/* Mobile Menu Button + Notifications */}
+            <div className="lg:hidden flex items-center space-x-2">
+              {user && (
+                <button
+                  onClick={() => setShowMobileNotifications(!showMobileNotifications)}
+                  className="relative p-2 text-white hover:text-cyan-400 transition-colors duration-300"
+                >
+                  <FaBell className="w-5 h-5" />
+                  {notifications.length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                      {notifications.length}
+                    </span>
+                  )}
+                </button>
               )}
-            </button>
+              <button
+                className="flex items-center justify-center w-8 h-8 text-white hover:text-cyan-400 transition-colors duration-300"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? (
+                  <IoMdClose className="w-5 h-5" />
+                ) : (
+                  <FaBars className="w-4 h-4" />
+                )}
+              </button>
+            </div>
           </div>
 
+          {/* Mobile Notifications Panel */}
+          {user && (
+            <div className={`lg:hidden transition-all bg-gray-900/95 duration-500 overflow-hidden ${
+              showMobileNotifications ? 'max-h-96 pb-4' : 'max-h-0'
+            }`}>
+              <div className="bg-gray-800/50 rounded-xl p-4 border border-cyan-500/30">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-white font-semibold">Notifications</h3>
+                  <Link 
+                    href="/notifications"
+                    className="text-cyan-400 text-sm hover:text-cyan-300"
+                    onClick={() => setShowMobileNotifications(false)}
+                  >
+                    View All
+                  </Link>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="text-center text-gray-400 py-4">
+                      No new notifications
+                    </div>
+                  ) : (
+                    notifications.map(notification => (
+                      <div key={notification.id} className="p-3 border-b border-gray-700/50 last:border-b-0 hover:bg-gray-700/30 transition-colors duration-300 rounded-lg mb-2">
+                        <div className="text-white font-medium text-sm mb-1">
+                          {notification.title}
+                        </div>
+                        <div className="text-gray-400 text-xs">
+                          {notification.message}
+                        </div>
+                        <div className="text-gray-500 text-xs mt-2">
+                          {new Date(notification.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Mobile Menu */}
-          <div className={`lg:hidden transition-all duration-500 overflow-hidden ${
+          <div className={`lg:hidden transition-all bg-gray-900/95 duration-500 overflow-hidden ${
             isMobileMenuOpen ? 'max-h-96 pb-4' : 'max-h-0'
           }`}>
             <nav className="flex flex-col space-y-3">
