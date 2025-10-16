@@ -260,88 +260,93 @@ const TournamentHeader = ({ tournament, currentBanner, setCurrentBanner, enrollm
 
   return (
     <div className="relative">
-      {/* Banner Carousel */}
-      <div className="relative h-96 lg:h-[500px] overflow-hidden">
-        {tournament.banner_urls?.map((banner, index) => (
-          <div
+  {/* Banner Carousel */}
+  <div className="relative h-96 lg:h-[500px] overflow-hidden">
+    {tournament.banner_urls?.map((banner, index) => (
+      <div
+        key={index}
+        className={`absolute inset-0 transition-opacity duration-500 ${
+          index === currentBanner ? 'opacity-30' : 'opacity-0'
+        }`}
+      >
+        <div 
+          className="w-full h-full bg-cover bg-center"
+          style={{ backgroundImage: `url(${banner})` }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"></div>
+        </div>
+      </div>
+    ))}
+    
+    {/* Banner Navigation */}
+    {tournament.banner_urls?.length > 1 && (
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+        {tournament.banner_urls.map((_, index) => (
+          <button
             key={index}
-            className={`absolute inset-0 transition-opacity duration-500 ${
-              index === currentBanner ? 'opacity-100' : 'opacity-0'
+            onClick={() => setCurrentBanner(index)}
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              index === currentBanner ? 'bg-cyan-400 scale-125' : 'bg-white/50'
             }`}
-          >
-            <div 
-              className="w-full h-full bg-cover bg-center"
-              style={{ backgroundImage: `url(${banner})` }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"></div>
-            </div>
-          </div>
+          />
         ))}
-        
-        {/* Banner Navigation */}
-        {tournament.banner_urls?.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-            {tournament.banner_urls.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentBanner(index)}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === currentBanner ? 'bg-cyan-400 scale-125' : 'bg-white/50'
-                }`}
-              />
-            ))}
-          </div>
-        )}
+      </div>
+    )}
 
-        {/* Header Content */}
-        <div className="absolute bottom-0 left-0 right-0 p-8">
-          <div className="container mx-auto">
-            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between">
-              <div className="flex-1">
-                <div className="flex items-center space-x-4 mb-4">
-                  {getStatusBadge(tournament.status)}
-                  {isTournamentFull && (
-                    <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                      Tournament Full
-                    </span>
-                  )}
-                  <span className="text-cyan-400 font-semibold flex items-center space-x-2">
-                    <FaGamepad className="w-4 h-4" />
-                    <span>{tournament.game_name}</span>
-                  </span>
-                  <span className="text-gray-300 flex items-center space-x-2">
-                    <FaUsers className="w-4 h-4" />
-                    <span>{tournament.current_participants}/{tournament.max_participants} Players</span>
-                  </span>
-                </div>
-                
-                <h1 className="text-4xl lg:text-6xl font-bold text-white mb-4 leading-tight">
-                  {tournament.title}
-                </h1>
-                
-                <p className="text-xl text-gray-300 max-w-3xl mb-6">
-                  {tournament.description}
-                </p>
-              </div>
-
-              <div className="flex space-x-4 mt-6 lg:mt-0">
-                {enrollment ? (
-                  getEnrollmentStatus()
-                ) : (
-                  <button
-                    onClick={onJoinClick}
-                    disabled={tournament.status !== 'upcoming' || isTournamentFull}
-                    className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-2xl hover:shadow-2xl hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed text-lg"
-                  >
-                    {isTournamentFull ? 'Tournament Full' : `Join Tournament - ₹${tournament.joining_fee}`}
-                  </button>
-                )}
-              </div>
+    {/* Header Content */}
+    <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8">
+      <div className="container mx-auto">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex-1">
+            {/* Status Badges */}
+            <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
+              {getStatusBadge(tournament.status)}
+              {isTournamentFull && (
+                <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs sm:text-sm font-semibold">
+                  Tournament Full
+                </span>
+              )}
+              <span className="text-cyan-400 font-semibold flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+                <FaGamepad className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>{tournament.game_name}</span>
+              </span>
+              <span className="text-gray-300 flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+                <FaUsers className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>{tournament.current_participants}/{tournament.max_participants} Players</span>
+              </span>
             </div>
+            
+            {/* Title */}
+            <h1 className="text-2xl sm:text-3xl lg:text-6xl font-bold text-white mb-2 sm:mb-4 leading-tight">
+              {tournament.title}
+            </h1>
+            
+            {/* Description */}
+            <p className="text-sm sm:text-base lg:text-xl text-gray-300 max-w-full sm:max-w-3xl mb-4 sm:mb-6">
+              {tournament.description}
+            </p>
+          </div>
+
+          {/* Join Button */}
+          <div className="flex flex-wrap gap-2 mt-4 lg:mt-0">
+            {enrollment ? (
+              getEnrollmentStatus()
+            ) : (
+              <button
+                onClick={onJoinClick}
+                disabled={tournament.status !== 'upcoming' || isTournamentFull}
+                className="px-6 sm:px-8 py-2 sm:py-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-2xl hover:shadow-2xl hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed text-sm sm:text-lg"
+              >
+                {isTournamentFull ? 'Tournament Full' : `Join Tournament - ₹${tournament.joining_fee}`}
+              </button>
+            )}
           </div>
         </div>
       </div>
     </div>
+  </div>
+</div>
+
   )
 }
 

@@ -1,115 +1,876 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '../lib/supabase'
+import { 
+  FaUsers, 
+  FaTrophy, 
+  FaCalendarAlt, 
+  FaClock, 
+  FaGamepad,
+  FaSearch,
+  FaFilter,
+  FaFire,
+  FaCrown,
+  FaMedal,
+  FaPlayCircle,
+  FaRegClock,
+  FaChevronLeft,
+  FaChevronRight,
+  FaStar,
+  FaEye,
+  FaQuestionCircle,
+  FaEnvelope,
+  FaUser,
+  FaPhone,
+  FaPaperPlane,
+  FaCheck,
+  FaTimes,
+  FaExpand,
+  FaMinus
+} from 'react-icons/fa'
+import { GiTrophyCup, GiPodium, GiCrossedSwords } from 'react-icons/gi'
+import { IoMdTrendingUp } from 'react-icons/io'
+import { MdSupportAgent } from 'react-icons/md'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const HomePage = () => {
+  const router = useRouter()
+  const [tournaments, setTournaments] = useState([])
+  const [filteredTournaments, setFilteredTournaments] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [activeFilter, setActiveFilter] = useState('all')
+  const [featuredTournaments, setFeaturedTournaments] = useState([])
+  const [currentFeaturedIndex, setCurrentFeaturedIndex] = useState(0)
+  
+  // Contact form state
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: ''
+  })
+  const [contactLoading, setContactLoading] = useState(false)
+  const [contactSuccess, setContactSuccess] = useState(false)
+  const [contactError, setContactError] = useState('')
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+  // FAQ state
+  const [expandedFaq, setExpandedFaq] = useState(null)
 
-export default function Home() {
+  // Status utility functions
+  const getStatusColor = (status) => {
+    const colors = {
+      upcoming: 'bg-gradient-to-r from-yellow-500 to-amber-600',
+      ongoing: 'bg-gradient-to-r from-green-500 to-emerald-600',
+      completed: 'bg-gradient-to-r from-gray-500 to-gray-600'
+    }
+    return colors[status] || colors.upcoming
+  }
+
+  const getStatusText = (status) => {
+    const texts = {
+      upcoming: 'Upcoming',
+      ongoing: 'Live Now',
+      completed: 'Completed'
+    }
+    return texts[status] || 'Upcoming'
+  }
+
+  const getCardStatusColor = (status) => {
+    const colors = {
+      upcoming: 'from-yellow-500 to-amber-600',
+      ongoing: 'from-green-500 to-emerald-600',
+      completed: 'from-gray-500 to-gray-600'
+    }
+    return colors[status] || colors.upcoming
+  }
+
+  useEffect(() => {
+    fetchTournaments()
+  }, [])
+
+  useEffect(() => {
+    filterTournaments()
+  }, [searchTerm, activeFilter, tournaments])
+
+  const fetchTournaments = async () => {
+    try {
+      setLoading(true)
+      
+      const { data: tournamentsData, error } = await supabase
+        .from('tournaments')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      setTournaments(tournamentsData || [])
+      
+      // Set featured tournaments (first 3 with highest prize pools)
+      const featured = [...tournamentsData]
+        .sort((a, b) => (b.prize_pool?.winner || 0) - (a.prize_pool?.winner || 0))
+        .slice(0, 3)
+      setFeaturedTournaments(featured)
+
+    } catch (error) {
+      console.error('Error fetching tournaments:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filterTournaments = () => {
+    let filtered = tournaments
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(tournament =>
+        tournament.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tournament.game_name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    // Status filter
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter(tournament => tournament.status === activeFilter)
+    }
+
+    setFilteredTournaments(filtered)
+  }
+
+  const nextFeatured = () => {
+    setCurrentFeaturedIndex((prev) => 
+      prev === featuredTournaments.length - 1 ? 0 : prev + 1
+    )
+  }
+
+  const prevFeatured = () => {
+    setCurrentFeaturedIndex((prev) => 
+      prev === 0 ? featuredTournaments.length - 1 : prev - 1
+    )
+  }
+
+  // Contact form handlers
+  const handleContactChange = (e) => {
+    setContactForm({
+      ...contactForm,
+      [e.target.name]: e.target.value
+    })
+    setContactError('')
+  }
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault()
+    setContactLoading(true)
+    setContactError('')
+
+    try {
+      const { data, error } = await supabase
+        .from('contact_submissions')
+        .insert([{
+          name: contactForm.name,
+          email: contactForm.email,
+          phone: contactForm.phone,
+          subject: contactForm.subject,
+          message: contactForm.message,
+          status: 'new'
+        }])
+
+      if (error) throw error
+
+      setContactSuccess(true)
+      setContactForm({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: ''
+      })
+
+      setTimeout(() => setContactSuccess(false), 5000)
+    } catch (error) {
+      console.error('Error submitting contact form:', error)
+      setContactError('Failed to send message. Please try again.')
+    } finally {
+      setContactLoading(false)
+    }
+  }
+
+  // FAQ data
+  const faqData = [
+    {
+      question: "How do I register for a tournament?",
+      answer: "Simply click on any tournament card and press the 'Join Now' button. You'll need to complete the registration process and pay the entry fee to secure your spot."
+    },
+    {
+      question: "What games do you support?",
+      answer: "We support all major e-sports titles including Valorant, CS:GO, Dota 2, League of Legends, Fortnite, Call of Duty, and many more. Check individual tournament details for specific game requirements."
+    },
+    {
+      question: "How are prizes distributed?",
+      answer: "Prizes are distributed within 24-48 hours after tournament completion. Winners receive their prizes through their preferred payment method after verification."
+    },
+    {
+      question: "Can I participate with my team?",
+      answer: "Yes! We have both solo and team tournaments. Team tournaments require all members to register and the team captain to complete the team registration process."
+    },
+    {
+      question: "What happens if a tournament gets canceled?",
+      answer: "If a tournament is canceled, all participants receive full refunds of their entry fees within 3-5 business days."
+    },
+    {
+      question: "Are there any age restrictions?",
+      answer: "Participants must be at least 16 years old to compete in our tournaments. Some tournaments may have higher age requirements based on game ratings."
+    }
+  ]
+
+  const toggleFaq = (index) => {
+    setExpandedFaq(expandedFaq === index ? null : index)
+  }
+
+  // Auto-rotate featured tournaments
+  useEffect(() => {
+    if (featuredTournaments.length > 1) {
+      const interval = setInterval(nextFeatured, 5000)
+      return () => clearInterval(interval)
+    }
+  }, [featuredTournaments.length])
+
   return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900/30 pt-20">
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="relative z-10">
+        {/* Hero Section with Featured Tournaments */}
+        <FeaturedTournaments 
+          tournaments={featuredTournaments}
+          currentIndex={currentFeaturedIndex}
+          onNext={nextFeatured}
+          onPrev={prevFeatured}
+          getStatusColor={getStatusColor}
+          getStatusText={getStatusText}
+          router={router}
         />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              pages/index.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+
+        {/* Main Content */}
+        <div className="container mx-auto px-4 py-12">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-3xl lg:text-6xl font-bold text-white mb-6">
+              <span className="bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent">
+                Welcome to Elite Esports
+              </span>
+            </h1>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Compete in the most thrilling e-sports tournaments. Show your skills, win massive prize pools, and become a champion.
+            </p>
+          </div>
+
+          {/* Search and Filter Section */}
+          <div className="mb-8">
+            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+              {/* Search Bar */}
+              <div className="relative flex-1 max-w-2xl w-full">
+                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search tournaments by name or game..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-gray-900/80 backdrop-blur-xl border border-cyan-500/30 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-all duration-300"
+                />
+              </div>
+
+              {/* Filter Buttons */}
+              <div className="flex flex-wrap gap-2 justify-center">
+                {[
+                  { id: 'all', label: 'All', icon: <FaGamepad className="w-4 h-4 sm:w-5 sm:h-5" /> },
+                  { id: 'upcoming', label: 'Upcoming', icon: <FaRegClock className="w-4 h-4 sm:w-5 sm:h-5" /> },
+                  { id: 'ongoing', label: 'Live', icon: <FaFire className="w-4 h-4 sm:w-5 sm:h-5" /> },
+                  { id: 'completed', label: 'Completed', icon: <GiTrophyCup className="w-4 h-4 sm:w-5 sm:h-5" /> }
+                ].map((filter) => (
+                  <button
+                    key={filter.id}
+                    onClick={() => setActiveFilter(filter.id)}
+                    className={`flex items-center justify-center space-x-1 sm:space-x-2 
+                      px-2.5 py-1.5 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl 
+                      text-xs sm:text-sm md:text-base font-semibold transition-all duration-300 
+                      ${
+                        activeFilter === filter.id
+                          ? 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-md sm:shadow-lg shadow-cyan-500/25'
+                          : 'bg-gray-900/80 text-gray-300 border border-gray-700 hover:border-cyan-500/50'
+                      }`}
+                  >
+                    {filter.icon}
+                    <span>{filter.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Tournaments Grid */}
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-cyan-400 font-semibold">Loading Tournaments...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Results Count */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="text-gray-300">
+                  Showing <span className="text-cyan-400 font-bold">{filteredTournaments.length}</span> tournaments
+                </div>
+                <div className="flex items-center space-x-2 text-cyan-400">
+                  <IoMdTrendingUp className="w-5 h-5" />
+                  <span className="font-semibold">Real-time Updates</span>
+                </div>
+              </div>
+
+              {/* Tournaments Grid */}
+              {filteredTournaments.length === 0 ? (
+                <div className="text-center py-20">
+                  <GiTrophyCup className="w-24 h-24 text-gray-400 mx-auto mb-6" />
+                  <h3 className="text-2xl font-bold text-white mb-2">No Tournaments Found</h3>
+                  <p className="text-gray-400 mb-6">Try adjusting your search or filter criteria</p>
+                  <button
+                    onClick={() => {
+                      setSearchTerm('')
+                      setActiveFilter('all')
+                    }}
+                    className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredTournaments.map((tournament) => (
+                    <TournamentCard 
+                      key={tournament.id} 
+                      tournament={tournament} 
+                      onJoin={() => router.push(`/tournaments/${tournament.slug}`)}
+                      getStatusColor={getCardStatusColor}
+                      getStatusText={getStatusText}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* FAQ Section */}
+        <div className="container mx-auto px-4 py-20">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
+              <span className="bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent">
+                Frequently Asked Questions
+              </span>
+            </h2>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              Get answers to the most common questions about our tournaments and platform.
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto">
+            <div className="grid gap-4">
+              {faqData.map((faq, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-900/80 backdrop-blur-xl border border-cyan-500/20 rounded-2xl overflow-hidden transition-all duration-300 hover:border-cyan-500/40"
+                >
+                  <button
+                    onClick={() => toggleFaq(index)}
+                    className="w-full px-6 py-6 text-left flex items-center justify-between focus:outline-none"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <FaQuestionCircle className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-white pr-4">
+                        {faq.question}
+                      </h3>
+                    </div>
+                    <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                      {expandedFaq === index ? (
+                        <FaMinus className="w-4 h-4 text-cyan-400" />
+                      ) : (
+                        <FaExpand className="w-4 h-4 text-cyan-400" />
+                      )}
+                    </div>
+                  </button>
+                  <div
+                    className={`px-6 pb-6 transition-all duration-300 ${
+                      expandedFaq === index ? 'block' : 'hidden'
+                    }`}
+                  >
+                    <div className="pl-14">
+                      <p className="text-gray-300 text-lg leading-relaxed">
+                        {faq.answer}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Section */}
+        <div className="container mx-auto px-4 py-20">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-start">
+              {/* Contact Info */}
+              <div>
+                <div className="text-center lg:text-left mb-12">
+                  <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
+                    <span className="bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent">
+                      Get In Touch
+                    </span>
+                  </h2>
+                  <p className="text-xl text-gray-300 mb-8">
+                    Have questions? Our support team is here to help you with any inquiries about tournaments, registration, or technical issues.
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-4 p-6 bg-gray-900/50 backdrop-blur-xl border border-cyan-500/20 rounded-2xl">
+                    <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-xl flex items-center justify-center">
+                      <MdSupportAgent className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-semibold text-lg">24/7 Support</h3>
+                      <p className="text-gray-400">We're always here to help you</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 p-6 bg-gray-900/50 backdrop-blur-xl border border-cyan-500/20 rounded-2xl">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                      <FaCheck className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-semibold text-lg">Quick Response</h3>
+                      <p className="text-gray-400">Typically reply within 1 hour</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 p-6 bg-gray-900/50 backdrop-blur-xl border border-cyan-500/20 rounded-2xl">
+                    <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-amber-600 rounded-xl flex items-center justify-center">
+                      <GiCrossedSwords className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-semibold text-lg">Tournament Experts</h3>
+                      <p className="text-gray-400">Professional e-sports guidance</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Form */}
+              <div className="bg-gray-900/80 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-8">
+                {contactSuccess ? (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <FaCheck className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-4">Message Sent!</h3>
+                    <p className="text-gray-300 mb-6">
+                      Thank you for contacting us. We'll get back to you within 24 hours.
+                    </p>
+                    <button
+                      onClick={() => setContactSuccess(false)}
+                      className="px-6 py-3 border border-cyan-500 text-cyan-400 rounded-xl hover:bg-cyan-500/10 transition-all duration-300"
+                    >
+                      Send Another Message
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleContactSubmit} className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-white font-semibold flex items-center space-x-2">
+                          <FaUser className="w-4 h-4 text-cyan-400" />
+                          <span>Full Name</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={contactForm.name}
+                          onChange={handleContactChange}
+                          required
+                          className="w-full px-4 py-3 bg-gray-800/50 border border-cyan-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-all duration-300"
+                          placeholder="Enter your full name"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-white font-semibold flex items-center space-x-2">
+                          <FaEnvelope className="w-4 h-4 text-cyan-400" />
+                          <span>Email Address</span>
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={contactForm.email}
+                          onChange={handleContactChange}
+                          required
+                          className="w-full px-4 py-3 bg-gray-800/50 border border-cyan-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-all duration-300"
+                          placeholder="Enter your email"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-white font-semibold flex items-center space-x-2">
+                          <FaPhone className="w-4 h-4 text-cyan-400" />
+                          <span>Phone Number</span>
+                        </label>
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={contactForm.phone}
+                          onChange={handleContactChange}
+                          className="w-full px-4 py-3 bg-gray-800/50 border border-cyan-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-all duration-300"
+                          placeholder="Enter your phone number"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-white font-semibold flex items-center space-x-2">
+                          <FaEnvelope className="w-4 h-4 text-cyan-400" />
+                          <span>Subject</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="subject"
+                          value={contactForm.subject}
+                          onChange={handleContactChange}
+                          required
+                          className="w-full px-4 py-3 bg-gray-800/50 border border-cyan-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-all duration-300"
+                          placeholder="What's this about?"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-white font-semibold flex items-center space-x-2">
+                        <FaEnvelope className="w-4 h-4 text-cyan-400" />
+                        <span>Message</span>
+                      </label>
+                      <textarea
+                        name="message"
+                        value={contactForm.message}
+                        onChange={handleContactChange}
+                        required
+                        rows="6"
+                        className="w-full px-4 py-3 bg-gray-800/50 border border-cyan-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-all duration-300 resize-none"
+                        placeholder="Tell us about your inquiry..."
+                      />
+                    </div>
+
+                    {contactError && (
+                      <div className="flex items-center space-x-2 text-red-400 bg-red-400/10 border border-red-400/30 rounded-xl p-4">
+                        <FaTimes className="w-5 h-5" />
+                        <span>{contactError}</span>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={contactLoading}
+                      className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold py-4 rounded-xl hover:shadow-xl hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:transform-none flex items-center justify-center space-x-2"
+                    >
+                      {contactLoading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          <span>Sending...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FaPaperPlane className="w-5 h-5" />
+                          <span>Send Message</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  );
+  )
 }
+
+// Featured Tournaments Component (Hero Section) - Same as before
+const FeaturedTournaments = ({ tournaments, currentIndex, onNext, onPrev, getStatusColor, getStatusText, router }) => {
+  if (tournaments.length === 0) {
+    return (
+      <div className="relative h-96 lg:h-[600px] bg-gradient-to-r from-cyan-900/20 to-purple-900/20 flex items-center justify-center">
+        <div className="text-center">
+          <GiTrophyCup className="w-24 h-24 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-3xl font-bold text-white mb-2">Featured Tournaments</h2>
+          <p className="text-gray-400">Amazing tournaments coming soon!</p>
+        </div>
+      </div>
+    )
+  }
+
+  const currentTournament = tournaments[currentIndex]
+
+  return (
+    <div className="relative h-[500px] sm:h-96 lg:h-[600px] overflow-hidden">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center transition-transform duration-1000"
+        style={{ 
+          backgroundImage: `url(${currentTournament.banner_urls?.[0] || '/default-banner.jpg'})`,
+          transform: 'scale(1.1)'
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/90 to-gray-900/70"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-gray-900/50"></div>
+      </div>
+
+      {/* Navigation Arrows */}
+      {tournaments.length > 1 && (
+        <>
+          <button
+            onClick={onPrev}
+            className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-gray-900/80 backdrop-blur-xl border border-cyan-500/30 rounded-full flex items-center justify-center text-cyan-400 hover:text-white hover:bg-cyan-500/20 transition-all duration-300 z-20"
+          >
+            <FaChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+          <button
+            onClick={onNext}
+            className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-gray-900/80 backdrop-blur-xl border border-cyan-500/30 rounded-full flex items-center justify-center text-cyan-400 hover:text-white hover:bg-cyan-500/20 transition-all duration-300 z-20"
+          >
+            <FaChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+        </>
+      )}
+
+      {/* Content */}
+      <div className="relative z-10 container mx-auto px-4 h-full flex items-center">
+        <div className="max-w-4xl w-full">
+          {/* Status Badge - Adjusted for mobile */}
+          <div className="flex flex-wrap items-center gap-2 mb-4 sm:mb-6">
+            <span
+              className={`${getStatusColor(
+                currentTournament.status
+              )} text-white px-3 py-1.5 rounded-full font-bold text-xs sm:text-sm`}
+            >
+              {getStatusText(currentTournament.status)}
+            </span>
+
+            <span className="text-cyan-400 font-semibold flex items-center space-x-1 text-xs sm:text-sm">
+              <FaFire className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span>Featured</span>
+            </span>
+          </div>
+
+          {/* Title - Adjusted text size for mobile */}
+          <h1 className="text-2xl sm:text-4xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 leading-tight">
+            {currentTournament.title}
+          </h1>
+
+          {/* Description - Adjusted for mobile */}
+          <p className="text-base sm:text-xl text-gray-300 mb-6 sm:mb-8 max-w-2xl line-clamp-2 sm:line-clamp-none">
+            {currentTournament.description}
+          </p>
+
+          {/* Quick Stats - Adjusted spacing for mobile */}
+          <div className="flex flex-wrap gap-3 sm:gap-6 mb-6 sm:mb-8">
+            <div className="flex items-center space-x-1 sm:space-x-2 text-white">
+              <FaTrophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
+              <span className="font-semibold text-sm sm:text-base">₹{currentTournament.prize_pool?.winner?.toLocaleString()}</span>
+              <span className="text-gray-400 text-xs sm:text-sm">Prize</span>
+            </div>
+            <div className="flex items-center space-x-1 sm:space-x-2 text-white">
+              <FaUsers className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+              <span className="font-semibold text-sm sm:text-base">{currentTournament.current_participants}/{currentTournament.max_participants}</span>
+              <span className="text-gray-400 text-xs sm:text-sm">Players</span>
+            </div>
+            <div className="flex items-center space-x-1 sm:space-x-2 text-white">
+              <FaGamepad className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
+              <span className="font-semibold text-sm sm:text-base">{currentTournament.game_name}</span>
+            </div>
+          </div>
+
+          {/* CTA Buttons - Stack vertically on mobile */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:space-x-4">
+            <button
+              onClick={() => router.push(`/tournaments/${currentTournament.slug}`)}
+              className="px-4 py-3 sm:px-6 sm:py-3 md:px-8 md:py-4 
+                bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold 
+                rounded-xl sm:rounded-2xl 
+                text-sm sm:text-base 
+                hover:shadow-xl hover:shadow-cyan-500/25 transform hover:scale-105 
+                transition-all duration-300 w-full sm:w-auto text-center"
+            >
+              Join Tournament – ₹{currentTournament.joining_fee}
+            </button>
+
+            <button
+              onClick={() => router.push(`/tournaments/${currentTournament.slug}`)}
+              className="px-4 py-3 sm:px-6 sm:py-3 md:px-8 md:py-4 
+                border border-cyan-500/50 text-cyan-400 font-bold 
+                rounded-xl sm:rounded-2xl 
+                text-sm sm:text-base 
+                hover:bg-cyan-500/10 transition-all duration-300 w-full sm:w-auto text-center"
+            >
+              View Details
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Indicators - Adjusted position for mobile */}
+      {tournaments.length > 1 && (
+        <div className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+          {tournaments.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentFeaturedIndex(index)}
+              className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${
+                index === currentIndex 
+                  ? 'bg-cyan-400 scale-125' 
+                  : 'bg-white/50 hover:bg-white/80'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Tournament Card Component (unchanged)
+const TournamentCard = ({ tournament, onJoin, getStatusColor, getStatusText }) => {
+  const isTournamentFull = tournament.current_participants >= tournament.max_participants
+  const prizePool = tournament.prize_pool || {}
+
+  return (
+    <div className="group bg-gray-900/80 backdrop-blur-xl border border-cyan-500/20 rounded-2xl overflow-hidden hover:border-cyan-500/50 hover:shadow-2xl hover:shadow-cyan-500/10 transition-all duration-500 transform hover:-translate-y-2">
+      {/* Tournament Banner */}
+      <div className="relative h-48 overflow-hidden">
+        <img 
+          src={tournament.banner_urls?.[0] || '/default-banner.jpg'} 
+          alt={tournament.title}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
+        
+        {/* Status Badge */}
+        <div className="absolute top-4 left-4">
+          <span className={`bg-gradient-to-r ${getStatusColor(tournament.status)} text-white px-3 py-1 rounded-full text-xs font-bold`}>
+            {getStatusText(tournament.status)}
+          </span>
+        </div>
+
+        {/* Prize Pool Badge */}
+        <div className="absolute top-4 right-4 bg-yellow-500/20 backdrop-blur-xl border border-yellow-500/30 rounded-xl px-3 py-2">
+          <div className="flex items-center space-x-1">
+            <FaTrophy className="w-3 h-3 text-yellow-400" />
+            <span className="text-yellow-400 font-bold text-sm">
+              ₹{((prizePool.winner || 0) + (prizePool.runnerUp || 0)).toLocaleString()}
+            </span>
+          </div>
+        </div>
+
+        {/* Participants */}
+        <div className="absolute bottom-4 left-4">
+          <div className="flex items-center space-x-2 text-white">
+            <FaUsers className="w-4 h-4 text-cyan-400" />
+            <span className="text-sm font-semibold">
+              {tournament.current_participants}/{tournament.max_participants}
+            </span>
+            {isTournamentFull && (
+              <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">FULL</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Card Content */}
+      <div className="p-6">
+        {/* Game Name */}
+        <div className="flex items-center space-x-2 mb-3">
+          <FaGamepad className="w-4 h-4 text-purple-400" />
+          <span className="text-purple-400 font-semibold text-sm">{tournament.game_name}</span>
+        </div>
+
+        {/* Title */}
+        <h3 className="text-xl font-bold text-white mb-3 line-clamp-2 group-hover:text-cyan-400 transition-colors duration-300">
+          {tournament.title}
+        </h3>
+
+        {/* Description */}
+        <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+          {tournament.description}
+        </p>
+
+        {/* Tournament Details */}
+        <div className="space-y-3 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-gray-300">
+              <FaCalendarAlt className="w-4 h-4 text-green-400" />
+              <span className="text-sm">Starts</span>
+            </div>
+            <span className="text-white text-sm font-semibold">
+              {new Date(tournament.schedule?.start_date).toLocaleDateString()}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-gray-300">
+              <FaClock className="w-4 h-4 text-blue-400" />
+              <span className="text-sm">Registration</span>
+            </div>
+            <span className="text-white text-sm font-semibold">
+              {new Date(tournament.schedule?.registration_end).toLocaleDateString()}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-gray-300">
+              <GiTrophyCup className="w-4 h-4 text-yellow-400" />
+              <span className="text-sm">Entry Fee</span>
+            </div>
+            <span className="text-cyan-400 text-sm font-bold">₹{tournament.joining_fee}</span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex space-x-3">
+          <button
+            onClick={onJoin}
+            disabled={tournament.status !== 'upcoming' || isTournamentFull}
+            className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed text-center"
+          >
+            {isTournamentFull ? 'Tournament Full' : 'Join Now'}
+          </button>
+          <button
+            onClick={onJoin}
+            className="px-4 border border-cyan-500/50 text-cyan-400 rounded-xl hover:bg-cyan-500/10 transition-all duration-300 flex items-center justify-center"
+          >
+            <FaEye className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default HomePage
