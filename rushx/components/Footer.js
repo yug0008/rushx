@@ -37,10 +37,10 @@ const Footer = () => {
       title: 'Games',
       icon: <FaGamepad className="w-4 h-4" />,
       links: [
-        { name: 'Free Fire', href: '/games/valorant', icon: <IoGameController className="w-3 h-3" /> },
+        { name: 'Free Fire', href: '/games/freefire', icon: <IoGameController className="w-3 h-3" /> },
         { name: 'CS2', href: '/games/cs2', icon: <IoGameController className="w-3 h-3" /> },
         { name: 'League of Legends', href: '/games/lol', icon: <IoGameController className="w-3 h-3" /> },
-        { name: 'BGMI', href: '/games/dota2', icon: <IoGameController className="w-3 h-3" /> },
+        { name: 'BGMI', href: '/games/bgmi', icon: <IoGameController className="w-3 h-3" /> },
         { name: 'Overwatch 2', href: '/games/overwatch', icon: <IoGameController className="w-3 h-3" /> },
       ],
     },
