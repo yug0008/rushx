@@ -28,19 +28,19 @@ const Footer = () => {
       icon: <GiTrophyCup className="w-4 h-4" />,
       links: [
         { name: 'Upcoming Events', href: '/tournaments', icon: <FaCalendarAlt className="w-3 h-3" /> },
-        { name: 'Past Tournaments', href: '/tournaments/past', icon: <FaTrophy className="w-3 h-3" /> },
+        { name: 'Past Tournaments', href: '/results', icon: <FaTrophy className="w-3 h-3" /> },
         { name: 'Tournament Rules', href: '/rules', icon: <FaShieldAlt className="w-3 h-3" /> },
-        { name: 'Prize Pools', href: '/prizes', icon: <FaCrown className="w-3 h-3" /> },
+        { name: 'Watch', href: '/watch', icon: <FaTwitch className="w-3 h-3" /> },
       ],
     },
     {
       title: 'Games',
       icon: <FaGamepad className="w-4 h-4" />,
       links: [
-        { name: 'Valorant', href: '/games/valorant', icon: <IoGameController className="w-3 h-3" /> },
+        { name: 'Free Fire', href: '/games/valorant', icon: <IoGameController className="w-3 h-3" /> },
         { name: 'CS2', href: '/games/cs2', icon: <IoGameController className="w-3 h-3" /> },
         { name: 'League of Legends', href: '/games/lol', icon: <IoGameController className="w-3 h-3" /> },
-        { name: 'Dota 2', href: '/games/dota2', icon: <IoGameController className="w-3 h-3" /> },
+        { name: 'BGMI', href: '/games/dota2', icon: <IoGameController className="w-3 h-3" /> },
         { name: 'Overwatch 2', href: '/games/overwatch', icon: <IoGameController className="w-3 h-3" /> },
       ],
     },
@@ -48,9 +48,9 @@ const Footer = () => {
       title: 'Community',
       icon: <FaUsers className="w-4 h-4" />,
       links: [
-        { name: 'Teams', href: '/teams', icon: <FaUsers className="w-3 h-3" /> },
+        
         { name: 'Players', href: '/players', icon: <FaCrown className="w-3 h-3" /> },
-        { name: 'Streamers', href: '/streamers', icon: <FaTwitch className="w-3 h-3" /> },
+        
         { name: 'Forums', href: '/forums', icon: <FaDiscord className="w-3 h-3" /> },
         { name: 'Discord', href: 'https://discord.gg/esports', icon: <FaDiscord className="w-3 h-3" /> },
       ],
