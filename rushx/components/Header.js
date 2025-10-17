@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { 
   FaTwitch, 
   FaUser,
+  FaDiscord,
   FaSignOutAlt,
   FaCrown,
   FaUsers,
@@ -150,11 +151,12 @@ const Header = () => {
   const navItems = [
     { name: 'Home', href: '/', icon: <FaHome className="w-3 h-3" /> },
     { name: 'Tournaments', href: '/tournaments', icon: <GiTrophyCup className="w-3 h-3" /> },
-    { name: 'Teams', href: '/teams', icon: <FaUsers className="w-3 h-3" /> },
+    
     { name: 'Players', href: '/players', icon: <FaCrown className="w-3 h-3" /> },
     { name: 'Schedule', href: '/schedule', icon: <FaCalendarAlt className="w-3 h-3" /> },
     { name: 'Results', href: '/results', icon: <FaTrophy className="w-3 h-3" /> },
     { name: 'Watch', href: '/watch', icon: <FaTwitch className="w-3 h-3" /> },
+    { name: 'Discord', href: 'https://discord.gg/esports', icon: <FaDiscord className="w-3 h-3" /> },
   ];
 
   const handleSignOut = async () => {
