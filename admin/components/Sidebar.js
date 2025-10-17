@@ -19,7 +19,7 @@ const Sidebar = ({ open, setOpen }) => {
     { name: 'Tournaments', href: '/admin/tournaments', icon: FaTrophy },
     { name: 'Enrollments', href: '/admin/enrollments', icon: FaUserCheck },
     { name: 'Users', href: '/admin/users', icon: FaUsers },
-    { name: 'Payments', href: '/admin/payments', icon: FaMoneyBillWave },
+    { name: 'watch', href: '/admin/watch', icon: FaMoneyBillWave },
     { name: 'Analytics', href: '/admin/analytics', icon: FaChartBar },
     { name: 'Notifications', href: '/admin/notifications', icon: FaBell },
     { name: 'results', href: '/admin/results', icon: FaCog },
