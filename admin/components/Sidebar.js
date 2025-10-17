@@ -22,7 +22,7 @@ const Sidebar = ({ open, setOpen }) => {
     { name: 'Payments', href: '/admin/payments', icon: FaMoneyBillWave },
     { name: 'Analytics', href: '/admin/analytics', icon: FaChartBar },
     { name: 'Notifications', href: '/admin/notifications', icon: FaBell },
-    { name: 'Settings', href: '/admin/settings', icon: FaCog },
+    { name: 'results', href: '/admin/results', icon: FaCog },
   ]
 
   const isActive = (href) => router.pathname === href
