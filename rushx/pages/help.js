@@ -7,7 +7,7 @@ export default function Help() {
       <div className="max-w-5xl mx-auto space-y-12">
         {/* Header */}
         <div className="text-center space-y-3">
-          <h1 className="text-4xl font-extrabold text-cyan-400 flex justify-center items-center space-x-2">
+          <h1 className="text-2xl font-extrabold text-cyan-400 flex justify-center items-center space-x-2">
             <FaQuestionCircle className="w-8 h-8" />
             <span>RushX Help Center</span>
           </h1>
@@ -18,10 +18,12 @@ export default function Help() {
 
         {/* Section: Joining Tournaments */}
         <section className="bg-gray-900/60 p-6 rounded-2xl border border-cyan-500/20 backdrop-blur-xl">
-          <h2 className="text-2xl font-bold text-cyan-400 flex items-center space-x-2 mb-4">
-            <FaGamepad className="w-6 h-6" />
-            <span>How to Join a Tournament</span>
-          </h2>
+          <h2 className="text-base font-bold text-cyan-400 flex items-center space-x-1 mb-3 
+               md:text-2xl md:space-x-2 md:mb-4">
+  <FaGamepad className="w-4 h-4 md:w-6 md:h-6" />
+  <span>How to Join a Tournament</span>
+</h2>
+
           <ul className="space-y-2 text-gray-300 list-disc list-inside">
             <li>Login or create an account on RushX.</li>
             <li>Go to the <b>Tournaments</b> section and select any ongoing or upcoming tournament.</li>
@@ -34,10 +36,13 @@ export default function Help() {
 
         {/* Section: After Enrollment */}
         <section className="bg-gray-900/60 p-6 rounded-2xl border border-cyan-500/20">
-          <h2 className="text-2xl font-bold text-cyan-400 flex items-center space-x-2 mb-4">
-            <FaUsers className="w-6 h-6" />
-            <span>After Enrollment</span>
-          </h2>
+          
+          <h2 className="text-base font-bold text-cyan-400 flex items-center space-x-1 mb-3 
+               md:text-2xl md:space-x-2 md:mb-4">
+  <FaGamepad className="w-4 h-4 md:w-6 md:h-6" />
+  <span>After Enrollment</span>
+</h2>
+
           <p className="text-gray-300 mb-3">
             Once enrolled, when you revisit the tournament page, it will display <b>Enrolled</b> status.  
             You’ll also get access to a new tab called <b>My Team</b> where you can find:
@@ -55,10 +60,12 @@ export default function Help() {
 
         {/* Section: Tournament Info */}
         <section className="bg-gray-900/60 p-6 rounded-2xl border border-cyan-500/20">
-          <h2 className="text-2xl font-bold text-cyan-400 flex items-center space-x-2 mb-4">
-            <FaInfoCircle className="w-6 h-6" />
-            <span>Tournament Information</span>
-          </h2>
+          <h2 className="text-base font-bold text-cyan-400 flex items-center space-x-1 mb-3 
+               md:text-2xl md:space-x-2 md:mb-4">
+  <FaGamepad className="w-4 h-4 md:w-6 md:h-6" />
+  <span>Tournament Information</span>
+</h2>
+
           <p className="text-gray-300">
             Each tournament page contains complete details such as:
           </p>
@@ -73,10 +80,12 @@ export default function Help() {
 
         {/* Section: Scoring System */}
         <section className="bg-gray-900/60 p-6 rounded-2xl border border-cyan-500/20">
-          <h2 className="text-2xl font-bold text-cyan-400 flex items-center space-x-2 mb-4">
-            <FaTrophy className="w-6 h-6" />
-            <span>Scoring System</span>
-          </h2>
+         <h2 className="text-base font-bold text-cyan-400 flex items-center space-x-1 mb-3 
+               md:text-2xl md:space-x-2 md:mb-4">
+  <FaGamepad className="w-4 h-4 md:w-6 md:h-6" />
+  <span>Scoring System</span>
+</h2>
+
 
           <p className="text-gray-300 mb-4">
             Points are awarded based on <b>Kills</b> and <b>Placement</b>.  
