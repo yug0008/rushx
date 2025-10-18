@@ -1,3 +1,5 @@
+// components/Footer.js
+import { useState } from 'react';
 import Link from 'next/link';
 import { 
   FaTwitch, 
@@ -13,14 +15,67 @@ import {
   FaGamepad,
   FaShieldAlt,
   FaQuestionCircle,
-  FaHeadset
+  FaHeadset,
+  FaCheck,
+  FaExclamationTriangle
 } from 'react-icons/fa';
 import { GiTrophyCup } from 'react-icons/gi';
 import { SiNvidia, SiRazer } from 'react-icons/si';
 import { IoGameController } from 'react-icons/io5';
+import { subscribeEmail } from '@/lib/supabase';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
+  const [message, setMessage] = useState('');
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    
+    // Basic email validation
+    if (!email) {
+      setStatus('error');
+      setMessage('Please enter your email address');
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setStatus('error');
+      setMessage('Please enter a valid email address');
+      return;
+    }
+
+    setStatus('loading');
+    setMessage('');
+
+    try {
+      const { data, error } = await subscribeEmail(email);
+      
+      if (error) {
+        if (error.code === '23505') { // Unique violation
+          setStatus('error');
+          setMessage('This email is already subscribed!');
+        } else {
+          setStatus('error');
+          setMessage('Failed to subscribe. Please try again.');
+        }
+      } else {
+        setStatus('success');
+        setMessage('Successfully subscribed! Welcome to RUSHX.');
+        setEmail('');
+        
+        // Reset success message after 5 seconds
+        setTimeout(() => {
+          setStatus('idle');
+          setMessage('');
+        }, 5000);
+      }
+    } catch (error) {
+      setStatus('error');
+      setMessage('An unexpected error occurred. Please try again.');
+    }
+  };
 
   const footerSections = [
     {
@@ -37,21 +92,20 @@ const Footer = () => {
       title: 'Games',
       icon: <FaGamepad className="w-4 h-4" />,
       links: [
-        { name: 'Free Fire', href: '/games/freefire', icon: <IoGameController className="w-3 h-3" /> },
-        { name: 'CS2', href: '/games/cs2', icon: <IoGameController className="w-3 h-3" /> },
-        { name: 'League of Legends', href: '/games/lol', icon: <IoGameController className="w-3 h-3" /> },
-        { name: 'BGMI', href: '/games/bgmi', icon: <IoGameController className="w-3 h-3" /> },
-        { name: 'Overwatch 2', href: '/games/overwatch', icon: <IoGameController className="w-3 h-3" /> },
+        { name: 'Free Fire', href: 'https://play.google.com/store/apps/details?id=com.dts.freefireth&hl=en_IN', icon: <IoGameController className="w-3 h-3" /> },
+        { name: 'CS2', href: 'https://www.counter-strike.net/cs2', icon: <IoGameController className="w-3 h-3" /> },
+        { name: 'League of Legends', href: 'https://www.leagueoflegends.com/en-gb/', icon: <IoGameController className="w-3 h-3" /> },
+        { name: 'BGMI', href: 'https://play.google.com/store/apps/details?id=com.pubg.imobile&hl=en_IN', icon: <IoGameController className="w-3 h-3" /> },
+        { name: 'Overwatch 2', href: 'https://overwatch.blizzard.com/en-us/', icon: <IoGameController className="w-3 h-3" /> },
       ],
     },
     {
       title: 'Community',
       icon: <FaUsers className="w-4 h-4" />,
       links: [
-        
         { name: 'Players', href: '/players', icon: <FaCrown className="w-3 h-3" /> },
-        
-        { name: 'Forums', href: '/forums', icon: <FaDiscord className="w-3 h-3" /> },
+        { name: 'Instagram', href: 'https://instagram.com', icon: <FaInstagram className="w-3 h-3" /> },
+        { name: 'YouTube', href: 'https://youtube.com', icon: <FaYoutube className="w-3 h-3" /> },
         { name: 'Discord', href: 'https://discord.gg/esports', icon: <FaDiscord className="w-3 h-3" /> },
       ],
     },
@@ -154,17 +208,52 @@ const Footer = () => {
             <p className="text-gray-400 mb-6">
               Get the latest tournament updates, meta shifts, and exclusive content delivered to your inbox.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+            
+            {/* Status Message */}
+            {message && (
+              <div className={`mb-4 p-3 rounded-lg ${
+                status === 'success' 
+                  ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                  : 'bg-red-500/20 text-red-400 border border-red-500/30'
+              }`}>
+                <div className="flex items-center justify-center space-x-2">
+                  {status === 'success' ? (
+                    <FaCheck className="w-4 h-4" />
+                  ) : (
+                    <FaExclamationTriangle className="w-4 h-4" />
+                  )}
+                  <span>{message}</span>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
               <input
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
-                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300"
+                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300 disabled:opacity-50"
+                disabled={status === 'loading'}
               />
-              <button className="flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300 whitespace-nowrap">
-                <FaEnvelope className="w-4 h-4" />
-                <span>Subscribe</span>
+              <button 
+                type="submit"
+                disabled={status === 'loading'}
+                className="flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {status === 'loading' ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Subscribing...</span>
+                  </>
+                ) : (
+                  <>
+                    <FaEnvelope className="w-4 h-4" />
+                    <span>Subscribe</span>
+                  </>
+                )}
               </button>
-            </div>
+            </form>
           </div>
         </div>
       </div>
