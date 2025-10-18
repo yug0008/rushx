@@ -224,7 +224,7 @@ const ResultsPage = () => {
     return (
       <div className="flex items-center space-x-2 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm mobile:text-xs mobile:px-2 mobile:py-0.5">
         <FaCheckCircle className="w-3 h-3 mobile:w-2 mobile:h-2" />
-        <span>Completed</span>
+        
       </div>
     )
   }
@@ -449,22 +449,23 @@ const TournamentResultCard = ({ result, onSelect }) => {
               {getGameIcon(result.tournament.game_name)}
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-xl font-bold text-white group-hover:text-cyan-400 transition-colors duration-300 
-                             mobile:text-base truncate max-[450px]:text-sm">
-                {result.tournament.title}
-              </h3>
-              <div className="flex items-center space-x-4 text-sm text-gray-400 mt-1 
-                              mobile:space-x-2 mobile:text-xs max-[450px]:space-x-1 max-[450px]:text-[10px]">
-                <div className="flex items-center space-x-1">
-                  <FaCalendar className="w-3 h-3 mobile:w-2 mobile:h-2 max-[450px]:w-2 max-[450px]:h-2" />
-                  <span>{formatDate(result.completed_at)}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <FaUsers className="w-3 h-3 mobile:w-2 mobile:h-2 max-[450px]:w-2 max-[450px]:h-2" />
-                  <span>{result.total_participants} Participants</span>
-                </div>
-              </div>
-            </div>
+  <h3 className="text-base sm:text-xl font-bold text-white group-hover:text-cyan-400 transition-colors duration-300 truncate max-w-full">
+  {result.tournament.title}
+</h3>
+
+
+  <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-gray-400 mt-1">
+    <div className="flex items-center space-x-1">
+      <FaCalendar className="w-2 h-2 sm:w-3 sm:h-3" />
+      <span className="truncate">{formatDate(result.completed_at)}</span>
+    </div>
+    <div className="flex items-center space-x-1">
+      <FaUsers className="w-2 h-2 sm:w-3 sm:h-3" />
+      <span className="truncate">{result.total_participants} Participants</span>
+    </div>
+  </div>
+</div>
+
           </div>
 
           <div className="flex items-center space-x-3 mobile:space-x-2 max-[450px]:space-x-1">
@@ -473,7 +474,7 @@ const TournamentResultCard = ({ result, onSelect }) => {
               <div className="flex items-center bg-green-500/20 text-green-400 px-3 py-1.5 rounded-full text-sm font-semibold 
                               mobile:px-2 mobile:py-1">
                 <FaCheckCircle className="w-4 h-4 mobile:w-3 mobile:h-3" />
-                <span className="ml-2 hidden sm:inline">Completed</span>
+                
               </div>
             ) : (
               getStatusBadge(result)
@@ -572,126 +573,128 @@ const TournamentResultModal = ({ result, onClose }) => {
   return (
    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 mobile:p-2">
   <div className="bg-gray-900/95 backdrop-blur-xl rounded-3xl border border-cyan-500/30 max-w-4xl w-full max-h-[90vh] overflow-y-auto mobile:rounded-2xl mobile:max-h-[95vh]">
-    {/* Header */}
-    <div className="p-8 border-b border-gray-700/50 mobile:p-4">
-<div className="flex items-center justify-between mb-6 mobile:mb-4">
-  {/* Left Section */}
-  <div className="flex items-center space-x-4 mobile:space-x-2 flex-1 min-w-0">
-    {/* Game Icon */}
-    <div className="w-16 h-16 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl 
-                    mobile:w-10 mobile:h-10 mobile:text-base mobile:rounded-lg flex-shrink-0">
-      {getGameIcon(result.tournament.game_name)}
-    </div>
+{/* Header */}
+<div className="p-2 border-b border-gray-700/50">
+  <div className="flex items-center justify-between mb-2">
+    {/* Left Section */}
+    <div className="flex items-center space-x-1 flex-1 min-w-0">
+      {/* Game Icon */}
+      <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-md flex items-center justify-center text-white text-sm flex-shrink-0">
+        {getGameIcon(result.tournament.game_name)}
+      </div>
 
-    {/* Tournament Info */}
-    <div className="flex-1 min-w-0">
-      <h2 className="text-3xl font-bold text-white truncate mobile:text-1xl mobile:font-semibold">
-  {result.tournament.title}
-</h2>
+      {/* Tournament Info */}
+      <div className="flex-1 min-w-0">
+        <h2 className="text-sm font-semibold text-white truncate">
+          {result.tournament.title}
+        </h2>
 
+        {/* Sub Info */}
+        <div className="flex items-center space-x-1 text-gray-400 mt-1 text-[10px]">
+          {/* Completed Date */}
+          <div className="flex items-center space-x-1">
+            <FaCalendar className="w-2 h-2 flex-shrink-0" />
+            <span className="truncate">{formatDate(result.completed_at)}</span>
+          </div>
 
-      {/* Sub Info */}
-      <div className="flex items-center space-x-4 text-gray-400 mt-2 mobile:space-x-2 mobile:mt-1 mobile:text-xs">
-        {/* Completed Date */}
-        <div className="flex items-center space-x-2 mobile:space-x-1">
-          <FaCalendar className="w-4 h-4 mobile:w-3 mobile:h-3 flex-shrink-0" />
-          <span className="whitespace-nowrap truncate">
-            <span className="hidden mobile:inline">{formatDate(result.completed_at)}</span>
-            <span className="inline mobile:hidden"> {formatDate(result.completed_at)}</span>
-          </span>
-        </div>
-
-        {/* Participants */}
-        <div className="flex items-center space-x-2 mobile:space-x-1">
-          <FaUsers className="w-4 h-4 mobile:w-3 mobile:h-3 flex-shrink-0" />
-          <span className="truncate">
-            <span className="hidden mobile:inline">{result.total_participants}</span>
-            <span className="inline mobile:hidden">{result.total_participants} </span>
-          </span>
+          {/* Participants */}
+          <div className="flex items-center space-x-1">
+            <FaUsers className="w-2 h-2 flex-shrink-0" />
+            <span className="truncate">{result.total_participants}</span>
+          </div>
         </div>
       </div>
     </div>
+
+    {/* Close Button */}
+    <button
+      onClick={onClose}
+      className="w-6 h-6 bg-gray-800/50 rounded-sm flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700/50 transition-all duration-300 flex-shrink-0 text-sm"
+    >
+      ×
+    </button>
   </div>
 
-  {/* Close Button */}
-  <button
-    onClick={onClose}
-    className="w-10 h-10 bg-gray-800/50 rounded-xl flex items-center justify-center text-gray-400 
-               hover:text-white hover:bg-gray-700/50 transition-all duration-300 
-               mobile:w-7 mobile:h-7 mobile:rounded-md mobile:text-base flex-shrink-0"
-  >
-    ×
-  </button>
-</div>
 
 
-
-      {/* Final Score */}
-      <div className="bg-gradient-to-r from-cyan-500/10 to-purple-600/10 rounded-2xl p-6 border border-cyan-500/20 mobile:p-4 mobile:rounded-xl">
-        <div className="text-center">
-          <div className="text-sm text-cyan-400 font-semibold mb-2 mobile:text-xs">
-            CHAMPIONSHIP MATCH
-          </div>
-          <div className="text-4xl font-bold text-white mobile:text-2xl tracking-wide">
-            {result.final_score}
-          </div>
-          <div className="text-gray-400 mt-2 mobile:text-sm mobile:mt-1">
-            Final Score
-          </div>
-        </div>
-      </div>
+{/* Final Score */}
+<div className="bg-gradient-to-r from-cyan-500/10 to-purple-600/10 rounded-xl p-3 border border-cyan-500/20">
+  <div className="text-center">
+    <div className="text-xs text-cyan-400 font-semibold mb-1">
+      CHAMPIONSHIP MATCH
     </div>
+    <div className="text-2xl font-bold text-white tracking-wide">
+      {result.final_score}
+    </div>
+    <div className="text-[10px] text-gray-400 mt-1">
+      Final Score
+    </div>
+  </div>
+</div></div>
+   {/* Podium Section */}
+<div className="p-8 mobile:p-2">
+  <h3 className="text-xs font-bold text-white mb-2 flex items-center space-x-1 
+               lg:text-2xl lg:mb-6 lg:space-x-2">
+  <GiPodium className="w-3 h-3 text-cyan-400 lg:w-6 lg:h-6" />
+  <span>Tournament Podium</span>
+</h3>
 
-    {/* Podium Section */}
-<div className="p-8 mobile:p-4">
-  <h3 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2 mobile:text-lg mobile:mb-4">
-    <GiPodium className="w-6 h-6 text-cyan-400 mobile:w-5 mobile:h-5" />
-    <span>Tournament Podium</span>
-  </h3>
 
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mobile:mb-6
-                  mobile:flex mobile:space-x-4 mobile:overflow-x-auto mobile:scrollbar-thin mobile:scrollbar-thumb-cyan-500/40 mobile:scrollbar-track-gray-900/20">
+
+  {/* Desktop Layout */}
+  <div className="hidden md:grid grid-cols-3 gap-6 mb-8">
     {podiumPlayers.map(({ position, player, prize, icon: Icon, color }) => (
-      <div 
-        key={position} 
-        className={`text-center transform transition-transform duration-300 
-                    ${position === 1 ? '-translate-y-4 mobile:-translate-y-2' : ''} 
-                    flex-shrink-0 mobile:w-24`}>
-        {/* Icon */}
-        <div className={`w-24 h-24 bg-gradient-to-br ${getColorClasses(color)} rounded-full flex items-center justify-center mx-auto mb-4 border-4 shadow-2xl 
-                        ${position === 1 ? 'shadow-yellow-500/25' : 'shadow-cyan-500/10'}
-                        mobile:w-16 mobile:h-16 mobile:mb-2 mobile:border-2`}>
-          <Icon className="w-10 h-10 mobile:w-6 mobile:h-6 text-white" />
+      <div key={position} className="text-center">
+        <div className={`w-24 h-24 bg-gradient-to-br ${getColorClasses(color)} rounded-full flex items-center justify-center mx-auto mb-4 border-4 shadow-2xl`}>
+          <Icon className="w-10 h-10 text-white" />
         </div>
-
-        {/* Position */}
-        <div className={`text-lg font-semibold mb-2 
-                        ${position === 1 ? 'text-yellow-300' : 'text-gray-300'} 
-                        mobile:text-xs`}>
-          {position === 1 ? 'CHAMPION' : `${position}${getOrdinalSuffix(position)}`} PLACE
+        <div className={`text-lg font-semibold mb-2 ${position === 1 ? 'text-yellow-300' : 'text-gray-300'}`}>
+          {position === 1 ? 'CHAMPION' : `${position}${getOrdinalSuffix(position)} PLACE`}
         </div>
-
-        {/* Player Name */}
-        <div className="text-xl font-bold text-white mb-2 mobile:text-sm truncate px-2">
-          {player?.username || 'TBD'}
-        </div>
-
-        {/* Gamer Tag */}
-        <div className="text-sm text-gray-400 mb-2 mobile:text-xs truncate px-2">
-          {player?.gamer_tag || ''}
-        </div>
-
-        {/* Prize */}
-        <div className={`text-lg font-bold ${position === 1 ? 'text-yellow-400' : 'text-cyan-400'} mobile:text-sm`}>
+        <div className="text-xl font-bold text-white mb-2">{player?.username || 'TBD'}</div>
+        <div className="text-sm text-gray-400 mb-2">{player?.gamer_tag || ''}</div>
+        <div className={`text-lg font-bold ${position === 1 ? 'text-yellow-400' : 'text-cyan-400'}`}>
           {formatCurrency(prize).replace('₹', '₹ ')}
         </div>
       </div>
     ))}
   </div>
 
+  {/* Mobile Layout */}
+  <div className="flex flex-col items-center space-y-2 md:hidden">
+    {/* Winner */}
+    {podiumPlayers.filter(p => p.position === 1).map(({ player, prize, icon: Icon, color }) => (
+      <div key={1} className="text-center">
+        <div className={`w-16 h-16 bg-gradient-to-br ${getColorClasses(color)} rounded-full flex items-center justify-center mb-1 border-2 shadow-md shadow-yellow-500/25 mx-auto`}>
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+        <div className="text-[10px] font-semibold text-yellow-300 mb-1">CHAMPION</div>
+        <div className="text-xs font-bold text-white mb-1 truncate w-20">{player?.username || 'TBD'}</div>
+        <div className="text-[9px] text-gray-400 mb-1 truncate w-20">{player?.gamer_tag || ''}</div>
+        <div className="text-xs font-bold text-yellow-400">{formatCurrency(prize).replace('₹', '₹ ')}</div>
+      </div>
+    ))}
 
+    {/* 2nd & 3rd */}
+    <div className="flex justify-center space-x-2">
+      {podiumPlayers.filter(p => p.position === 2 || p.position === 3).map(({ position, player, prize, icon: Icon, color }) => (
+        <div key={position} className="text-center">
+          <div className={`w-12 h-12 bg-gradient-to-br ${getColorClasses(color)} rounded-full flex items-center justify-center mb-1 border-2 shadow-md shadow-cyan-500/10`}>
+            <Icon className="w-4 h-4 text-white" />
+          </div>
+          <div className="text-[9px] font-semibold text-gray-300 mb-1">
+            {position === 2 ? '2ND PLACE' : '3RD PLACE'}
+          </div>
+          <div className="text-xs font-bold text-white mb-1 truncate w-16">{player?.username || 'TBD'}</div>
+          <div className="text-[8px] text-gray-400 mb-1 truncate w-16">{player?.gamer_tag || ''}</div>
+          <div className="text-xs font-bold text-cyan-400">{formatCurrency(prize).replace('₹', '₹ ')}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
 
-      {/* Prize Distribution */}
+{/* Prize Distribution */}
       <div className="bg-gray-800/30 rounded-2xl p-6 border border-gray-700/50 mobile:p-4 mobile:rounded-xl">
         <h4 className="text-xl font-bold text-white mb-4 flex items-center space-x-2 mobile:text-lg mobile:mb-3">
           <FaRupeeSign className="w-5 h-5 text-cyan-400 mobile:w-4 mobile:h-4" />
@@ -710,9 +713,7 @@ const TournamentResultModal = ({ result, onClose }) => {
           ))}
         </div>
       </div>
-    </div>
-
-    {/* Total Prize Pool */}
+      {/* Total Prize Pool */}
     <div className="p-8 bg-gradient-to-r from-cyan-500/10 to-purple-600/10 border-t border-gray-700/50 mobile:p-4">
       <div className="text-center">
         <div className="text-2xl font-bold text-white mb-2 mobile:text-xl">
@@ -723,6 +724,10 @@ const TournamentResultModal = ({ result, onClose }) => {
         </div>
       </div>
     </div>
+
+    
+    
+
   </div>
 </div>
   )
@@ -761,7 +766,7 @@ const getStatusBadge = (result) => {
   return (
     <div className="flex items-center space-x-2 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm mobile:text-xs mobile:px-2 mobile:py-0.5">
       <FaCheckCircle className="w-3 h-3 mobile:w-2 mobile:h-2" />
-      <span>Completed</span>
+      
     </div>
   )
 }
