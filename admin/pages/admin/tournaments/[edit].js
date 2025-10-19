@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { useAuth } from '../../../../context/AuthContext'
-import { supabase } from '../../../../lib/supabase'
+import { useAuth } from '../../../context/AuthContext'
+import { supabase } from '../../../lib/supabase'
 import { 
   FaSave, 
   FaTimes,
