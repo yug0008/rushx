@@ -156,7 +156,7 @@ const Header = () => {
     { name: 'Schedule', href: '/schedule', icon: <FaCalendarAlt className="w-3 h-3" /> },
     { name: 'Results', href: '/results', icon: <FaTrophy className="w-3 h-3" /> },
     { name: 'Watch', href: '/watch', icon: <FaTwitch className="w-3 h-3" /> },
-    { name: 'Discord', href: 'https://discord.gg/esports', icon: <FaDiscord className="w-3 h-3" /> },
+    { name: 'Discord', href: 'https://discord.gg/42Q9Nyc4', icon: <FaDiscord className="w-3 h-3" /> },
   ];
 
   const handleSignOut = async () => {

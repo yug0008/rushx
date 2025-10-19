@@ -40,6 +40,7 @@ const NewTournamentPage = () => {
     // Visuals
     banner_urls: [''],
     thumbnail_url: '',
+    banner_urls: [],
     
     // Tournament Details
     match_type: 'solo',
@@ -142,7 +143,7 @@ const NewTournamentPage = () => {
       ...prev,
       [parent]: {
         ...prev[parent],
-        [child]: prev[parent][child].map((item, i) => i === index ? value : item)
+         [child]: (prev[parent][child] || []).map((item, i) => i === index ? value : item)
       }
     }))
   }
@@ -153,7 +154,7 @@ const NewTournamentPage = () => {
       ...prev,
       [parent]: {
         ...prev[parent],
-        [child]: [...prev[parent][child], '']
+        [child]: [...(prev[parent][child] || []), '']
       }
     }))
   }

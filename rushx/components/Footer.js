@@ -106,7 +106,7 @@ const Footer = () => {
         { name: 'Players', href: '/players', icon: <FaCrown className="w-3 h-3" /> },
         { name: 'Instagram', href: 'https://instagram.com', icon: <FaInstagram className="w-3 h-3" /> },
         { name: 'YouTube', href: 'https://youtube.com', icon: <FaYoutube className="w-3 h-3" /> },
-        { name: 'Discord', href: 'https://discord.gg/esports', icon: <FaDiscord className="w-3 h-3" /> },
+        { name: 'Discord', href: 'https://discord.gg/42Q9Nyc4', icon: <FaDiscord className="w-3 h-3" /> },
       ],
     },
     {
