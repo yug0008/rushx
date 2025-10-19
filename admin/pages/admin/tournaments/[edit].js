@@ -4,6 +4,7 @@ import { useAuth } from '../../../context/AuthContext'
 import { supabase } from '../../../lib/supabase'
 import { 
   FaSave, 
+  FaPlus,
   FaTimes,
   FaImage,
   FaLink,
