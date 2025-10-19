@@ -64,6 +64,8 @@ const NewTournamentPage = () => {
       winner: 0,
       runnerUp: 0,
       thirdPlace: 0,
+      fourthPlace: 0,
+      fifthPlace: 0,
       total: 0
     },
     
@@ -290,9 +292,10 @@ const NewTournamentPage = () => {
   }
 
   const calculateTotalPrize = () => {
-    const { winner, runnerUp, thirdPlace } = formData.prize_pool
-    return winner + runnerUp + thirdPlace
-  }
+  const { winner, runnerUp, thirdPlace, fourthPlace, fifthPlace } = formData.prize_pool;
+  return (winner || 0) + (runnerUp || 0) + (thirdPlace || 0) + (fourthPlace || 0) + (fifthPlace || 0);
+}
+
 
   const validateForm = () => {
     if (!formData.title.trim()) {
@@ -827,6 +830,37 @@ const NewTournamentPage = () => {
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
                 />
               </div>
+              {/* 4th Place Prize */}
+<div>
+  <label className="block text-white font-semibold mb-2">
+    4th Place Prize (₹)
+  </label>
+  <input
+    type="number"
+    min="0"
+    value={formData.prize_pool.fourthPlace}
+    onChange={(e) =>
+      handleInputChange('prize_pool.fourthPlace', parseFloat(e.target.value))
+    }
+    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+  />
+</div>
+
+{/* 5th Place Prize */}
+<div>
+  <label className="block text-white font-semibold mb-2">
+    5th Place Prize (₹)
+  </label>
+  <input
+    type="number"
+    min="0"
+    value={formData.prize_pool.fifthPlace}
+    onChange={(e) =>
+      handleInputChange('prize_pool.fifthPlace', parseFloat(e.target.value))
+    }
+    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+  />
+</div>
 
               <div className="lg:col-span-3">
                 <div className="bg-gradient-to-r from-yellow-500/10 to-yellow-500/5 rounded-xl p-4 border border-yellow-500/30">

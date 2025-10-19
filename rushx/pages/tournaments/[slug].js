@@ -417,6 +417,29 @@ const TournamentSidebar = ({ tournament, enrollment, onJoinClick, isTournamentFu
             </div>
             <span className="text-gray-300 font-semibold">₹{prizePool.runnerUp}</span>
           </div>
+          <div className="flex justify-between items-center bg-gray-500/20 rounded-lg p-3">
+  <div className="flex items-center space-x-2">
+    <FaMedal className="w-4 h-4 text-amber-600" />
+    <span className="text-white">3rd Place</span>
+  </div>
+  <span className="text-gray-300 font-semibold">₹{prizePool.thirdPlace}</span>
+</div>
+
+<div className="flex justify-between items-center bg-gray-500/20 rounded-lg p-3">
+  <div className="flex items-center space-x-2">
+    <FaMedal className="w-4 h-4 text-teal-500" />
+    <span className="text-white">4th Place</span>
+  </div>
+  <span className="text-gray-300 font-semibold">₹{prizePool.fourthPlace}</span>
+</div>
+
+<div className="flex justify-between items-center bg-gray-500/20 rounded-lg p-3">
+  <div className="flex items-center space-x-2">
+    <FaMedal className="w-4 h-4 text-blue-500" />
+    <span className="text-white">5th Place</span>
+  </div>
+  <span className="text-gray-300 font-semibold">₹{prizePool.fifthPlace}</span>
+</div>
         </div>
       </div>
 
@@ -522,16 +545,24 @@ const OverviewTab = ({ tournament }) => {
         </div>
 
         <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
-          <div className="flex items-center space-x-3 mb-4">
-            <FaTrophy className="w-6 h-6 text-yellow-400" />
-            <h3 className="text-white font-semibold">Total Prize</h3>
-          </div>
-          <p className="text-2xl font-bold text-yellow-400">
-            ₹{(tournament.prize_pool?.winner + tournament.prize_pool?.runnerUp).toLocaleString()}
-          </p>
-          <p className="text-gray-400 text-sm">Winner + Runner Up</p>
-        </div>
-      </div>
+  <div className="flex items-center space-x-3 mb-4">
+    <FaTrophy className="w-6 h-6 text-yellow-400" />
+    <h3 className="text-white font-semibold">Total Prize</h3>
+  </div>
+  <p className="text-2xl font-bold text-yellow-400">
+    ₹{(
+      (tournament.prize_pool?.winner || 0) +
+      (tournament.prize_pool?.runnerUp || 0) +
+      (tournament.prize_pool?.thirdPlace || 0) +
+      (tournament.prize_pool?.fourthPlace || 0) +
+      (tournament.prize_pool?.fifthPlace || 0)
+    ).toLocaleString()}
+  </p>
+  <p className="text-gray-400 text-sm">
+    Winner + Runner Up + 3rd + 4th + 5th Place
+  </p>
+</div>
+</div>
 
       <div className="bg-gradient-to-r from-cyan-500/10 to-purple-600/10 rounded-xl p-6 border border-cyan-500/20">
         <h3 className="text-white font-bold text-xl mb-4">Tournament Format</h3>

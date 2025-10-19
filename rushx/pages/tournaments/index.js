@@ -351,7 +351,16 @@ const FeaturedTournaments = ({ tournaments, currentIndex, onNext, onPrev, getSta
           <div className="flex flex-wrap gap-3 sm:gap-6 mb-6 sm:mb-8">
             <div className="flex items-center space-x-1 sm:space-x-2 text-white">
               <FaTrophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
-              <span className="font-semibold text-sm sm:text-base">₹{currentTournament.prize_pool?.winner?.toLocaleString()}</span>
+             <span className="font-semibold text-sm sm:text-base">
+  ₹{(
+    (currentTournament.prize_pool?.winner || 0) +
+    (currentTournament.prize_pool?.runnerUp || 0) +
+    (currentTournament.prize_pool?.thirdPlace || 0) +
+    (currentTournament.prize_pool?.fourthPlace || 0) +
+    (currentTournament.prize_pool?.fifthPlace || 0)
+  ).toLocaleString()}
+</span>
+
               <span className="text-gray-400 text-xs sm:text-sm">Prize</span>
             </div>
             <div className="flex items-center space-x-1 sm:space-x-2 text-white">
@@ -436,15 +445,22 @@ const TournamentCard = ({ tournament, onJoin, getStatusColor, getStatusText }) =
           </span>
         </div>
 
-        {/* Prize Pool Badge */}
-        <div className="absolute top-4 right-4 bg-yellow-500/20 backdrop-blur-xl border border-yellow-500/30 rounded-xl px-3 py-2">
-          <div className="flex items-center space-x-1">
-            <FaTrophy className="w-3 h-3 text-yellow-400" />
-            <span className="text-yellow-400 font-bold text-sm">
-              ₹{((prizePool.winner || 0) + (prizePool.runnerUp || 0)).toLocaleString()}
-            </span>
-          </div>
-        </div>
+       {/* Prize Pool Badge */}
+<div className="absolute top-4 right-4 bg-yellow-500/20 backdrop-blur-xl border border-yellow-500/30 rounded-xl px-3 py-2">
+  <div className="flex items-center space-x-1">
+    <FaTrophy className="w-3 h-3 text-yellow-400" />
+    <span className="text-yellow-400 font-bold text-sm">
+      ₹{(
+        (prizePool.winner || 0) +
+        (prizePool.runnerUp || 0) +
+        (prizePool.thirdPlace || 0) +
+        (prizePool.fourthPlace || 0) +
+        (prizePool.fifthPlace || 0)
+      ).toLocaleString()}
+    </span>
+  </div>
+</div>
+
 
         {/* Participants */}
         <div className="absolute bottom-4 left-4">
