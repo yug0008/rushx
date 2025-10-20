@@ -21,7 +21,12 @@ import {
   FaWhatsapp,
   FaDiscord,
   FaTwitter,
-  FaHourglassHalf
+  FaHourglassHalf,
+  FaExternalLinkAlt,
+  FaSkull,
+  FaUser,
+  FaUserFriends,
+  FaUsers as FaSquad
 } from 'react-icons/fa'
 import { GiTrophyCup, GiPodium } from 'react-icons/gi'
 import { IoMdAlert } from 'react-icons/io'
@@ -40,6 +45,8 @@ const TournamentDetail = () => {
   const [loading, setLoading] = useState(true)
   const [leaderboard, setLeaderboard] = useState([])
   const [enrollmentFormData, setEnrollmentFormData] = useState(null)
+  const [topScores, setTopScores] = useState([])
+  const [scoresLoading, setScoresLoading] = useState(true)
 
   useEffect(() => {
     if (slug) {
@@ -87,11 +94,43 @@ const TournamentDetail = () => {
         .order('score', { ascending: false })
 
       setLeaderboard(leaderboardData || [])
+      
+      // Fetch top 5 scores
+      await fetchTopScores(tournamentData.id)
 
     } catch (error) {
       console.error('Error fetching tournament:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchTopScores = async (tournamentId) => {
+    try {
+      setScoresLoading(true)
+      
+      // Try to fetch from tournament_scores table first
+      const { data: scoresData, error } = await supabase
+        .from('tournament_scores')
+        .select('*')
+        .eq('tournament_id', tournamentId)
+        .order('points', { ascending: false })
+        .limit(5)
+
+      if (error) throw error
+
+      if (scoresData && scoresData.length > 0) {
+        setTopScores(scoresData)
+      } else {
+        // If no scores in database, set empty array
+        setTopScores([])
+      }
+
+    } catch (error) {
+      console.error('Error fetching top scores:', error)
+      setTopScores([])
+    } finally {
+      setScoresLoading(false)
     }
   }
 
@@ -188,6 +227,8 @@ const TournamentDetail = () => {
                 tournament={tournament}
                 enrollment={enrollment}
                 leaderboard={leaderboard}
+                topScores={topScores}
+                scoresLoading={scoresLoading}
               />
             </div>
           </div>
@@ -260,93 +301,92 @@ const TournamentHeader = ({ tournament, currentBanner, setCurrentBanner, enrollm
 
   return (
     <div className="relative">
-  {/* Banner Carousel */}
-  <div className="relative h-96 lg:h-[500px] overflow-hidden">
-    {tournament.banner_urls?.map((banner, index) => (
-      <div
-        key={index}
-        className={`absolute inset-0 transition-opacity duration-500 ${
-          index === currentBanner ? 'opacity-30' : 'opacity-0'
-        }`}
-      >
-        <div 
-          className="w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${banner})` }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"></div>
-        </div>
-      </div>
-    ))}
-    
-    {/* Banner Navigation */}
-    {tournament.banner_urls?.length > 1 && (
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-        {tournament.banner_urls.map((_, index) => (
-          <button
+      {/* Banner Carousel */}
+      <div className="relative h-96 lg:h-[500px] overflow-hidden">
+        {tournament.banner_urls?.map((banner, index) => (
+          <div
             key={index}
-            onClick={() => setCurrentBanner(index)}
-            className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              index === currentBanner ? 'bg-cyan-400 scale-125' : 'bg-white/50'
+            className={`absolute inset-0 transition-opacity duration-500 ${
+              index === currentBanner ? 'opacity-30' : 'opacity-0'
             }`}
-          />
-        ))}
-      </div>
-    )}
-
-    {/* Header Content */}
-    <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8">
-      <div className="container mx-auto">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex-1">
-            {/* Status Badges */}
-            <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
-              {getStatusBadge(tournament.status)}
-              {isTournamentFull && (
-                <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs sm:text-sm font-semibold">
-                  Tournament Full
-                </span>
-              )}
-              <span className="text-cyan-400 font-semibold flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-                <FaGamepad className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>{tournament.game_name}</span>
-              </span>
-              <span className="text-gray-300 flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-                <FaUsers className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>{tournament.current_participants}/{tournament.max_participants} Players</span>
-              </span>
+          >
+            <div 
+              className="w-full h-full bg-cover bg-center"
+              style={{ backgroundImage: `url(${banner})` }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"></div>
             </div>
-            
-            {/* Title */}
-            <h1 className="text-2xl sm:text-3xl lg:text-6xl font-bold text-white mb-2 sm:mb-4 leading-tight">
-              {tournament.title}
-            </h1>
-            
-            {/* Description */}
-            <p className="text-sm sm:text-base lg:text-xl text-gray-300 max-w-full sm:max-w-3xl mb-4 sm:mb-6">
-              {tournament.description}
-            </p>
           </div>
-
-          {/* Join Button */}
-          <div className="flex flex-wrap gap-2 mt-4 lg:mt-0">
-            {enrollment ? (
-              getEnrollmentStatus()
-            ) : (
+        ))}
+        
+        {/* Banner Navigation */}
+        {tournament.banner_urls?.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+            {tournament.banner_urls.map((_, index) => (
               <button
-                onClick={onJoinClick}
-                disabled={tournament.status !== 'upcoming' || isTournamentFull}
-                className="px-6 sm:px-8 py-2 sm:py-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-2xl hover:shadow-2xl hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed text-sm sm:text-lg"
-              >
-                {isTournamentFull ? 'Tournament Full' : `Join Tournament - ₹${tournament.joining_fee}`}
-              </button>
-            )}
+                key={index}
+                onClick={() => setCurrentBanner(index)}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  index === currentBanner ? 'bg-cyan-400 scale-125' : 'bg-white/50'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Header Content */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8">
+          <div className="container mx-auto">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between">
+              <div className="flex-1">
+                {/* Status Badges */}
+                <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
+                  {getStatusBadge(tournament.status)}
+                  {isTournamentFull && (
+                    <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs sm:text-sm font-semibold">
+                      Tournament Full
+                    </span>
+                  )}
+                  <span className="text-cyan-400 font-semibold flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+                    <FaGamepad className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span>{tournament.game_name}</span>
+                  </span>
+                  <span className="text-gray-300 flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+                    <FaUsers className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span>{tournament.current_participants}/{tournament.max_participants} Players</span>
+                  </span>
+                </div>
+                
+                {/* Title */}
+                <h1 className="text-2xl sm:text-3xl lg:text-6xl font-bold text-white mb-2 sm:mb-4 leading-tight">
+                  {tournament.title}
+                </h1>
+                
+                {/* Description */}
+                <p className="text-sm sm:text-base lg:text-xl text-gray-300 max-w-full sm:max-w-3xl mb-4 sm:mb-6">
+                  {tournament.description}
+                </p>
+              </div>
+
+              {/* Join Button */}
+              <div className="flex flex-wrap gap-2 mt-4 lg:mt-0">
+                {enrollment ? (
+                  getEnrollmentStatus()
+                ) : (
+                  <button
+                    onClick={onJoinClick}
+                    disabled={tournament.status !== 'upcoming' || isTournamentFull}
+                    className="px-6 sm:px-8 py-2 sm:py-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-2xl hover:shadow-2xl hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed text-sm sm:text-lg"
+                  >
+                    {isTournamentFull ? 'Tournament Full' : `Join Tournament - ₹${tournament.joining_fee}`}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
-
   )
 }
 
@@ -418,28 +458,28 @@ const TournamentSidebar = ({ tournament, enrollment, onJoinClick, isTournamentFu
             <span className="text-gray-300 font-semibold">₹{prizePool.runnerUp}</span>
           </div>
           <div className="flex justify-between items-center bg-gray-500/20 rounded-lg p-3">
-  <div className="flex items-center space-x-2">
-    <FaMedal className="w-4 h-4 text-amber-600" />
-    <span className="text-white">3rd Place</span>
-  </div>
-  <span className="text-gray-300 font-semibold">₹{prizePool.thirdPlace}</span>
-</div>
+            <div className="flex items-center space-x-2">
+              <FaMedal className="w-4 h-4 text-amber-600" />
+              <span className="text-white">3rd Place</span>
+            </div>
+            <span className="text-gray-300 font-semibold">₹{prizePool.thirdPlace}</span>
+          </div>
 
-<div className="flex justify-between items-center bg-gray-500/20 rounded-lg p-3">
-  <div className="flex items-center space-x-2">
-    <FaMedal className="w-4 h-4 text-teal-500" />
-    <span className="text-white">4th Place</span>
-  </div>
-  <span className="text-gray-300 font-semibold">₹{prizePool.fourthPlace}</span>
-</div>
+          <div className="flex justify-between items-center bg-gray-500/20 rounded-lg p-3">
+            <div className="flex items-center space-x-2">
+              <FaMedal className="w-4 h-4 text-teal-500" />
+              <span className="text-white">4th Place</span>
+            </div>
+            <span className="text-gray-300 font-semibold">₹{prizePool.fourthPlace}</span>
+          </div>
 
-<div className="flex justify-between items-center bg-gray-500/20 rounded-lg p-3">
-  <div className="flex items-center space-x-2">
-    <FaMedal className="w-4 h-4 text-blue-500" />
-    <span className="text-white">5th Place</span>
-  </div>
-  <span className="text-gray-300 font-semibold">₹{prizePool.fifthPlace}</span>
-</div>
+          <div className="flex justify-between items-center bg-gray-500/20 rounded-lg p-3">
+            <div className="flex items-center space-x-2">
+              <FaMedal className="w-4 h-4 text-blue-500" />
+              <span className="text-white">5th Place</span>
+            </div>
+            <span className="text-gray-300 font-semibold">₹{prizePool.fifthPlace}</span>
+          </div>
         </div>
       </div>
 
@@ -463,7 +503,15 @@ const TournamentSidebar = ({ tournament, enrollment, onJoinClick, isTournamentFu
 }
 
 // Tournament Tabs Component
-const TournamentTabs = ({ activeTab, setActiveTab, tournament, enrollment, leaderboard }) => {
+const TournamentTabs = ({ 
+  activeTab, 
+  setActiveTab, 
+  tournament, 
+  enrollment, 
+  leaderboard, 
+  topScores, 
+  scoresLoading 
+}) => {
   const tabs = [
     { id: 'overview', name: 'Overview', icon: <FaEye className="w-4 h-4" /> },
     { id: 'about', name: 'About', icon: <FaBookmark className="w-4 h-4" /> },
@@ -501,7 +549,14 @@ const TournamentTabs = ({ activeTab, setActiveTab, tournament, enrollment, leade
       <div className="p-6">
         {activeTab === 'overview' && <OverviewTab tournament={tournament} />}
         {activeTab === 'about' && <AboutTab tournament={tournament} />}
-        {activeTab === 'leaderboard' && <LeaderboardTab leaderboard={leaderboard} />}
+        {activeTab === 'leaderboard' && (
+          <LeaderboardTab 
+            leaderboard={leaderboard} 
+            topScores={topScores}
+            scoresLoading={scoresLoading}
+            tournamentId={tournament?.id}
+          />
+        )}
         {activeTab === 'rules' && <RulesTab tournament={tournament} />}
         {activeTab === 'myteam' && <MyTeamTab enrollment={enrollment} />}
       </div>
@@ -545,24 +600,24 @@ const OverviewTab = ({ tournament }) => {
         </div>
 
         <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
-  <div className="flex items-center space-x-3 mb-4">
-    <FaTrophy className="w-6 h-6 text-yellow-400" />
-    <h3 className="text-white font-semibold">Total Prize</h3>
-  </div>
-  <p className="text-2xl font-bold text-yellow-400">
-    ₹{(
-      (tournament.prize_pool?.winner || 0) +
-      (tournament.prize_pool?.runnerUp || 0) +
-      (tournament.prize_pool?.thirdPlace || 0) +
-      (tournament.prize_pool?.fourthPlace || 0) +
-      (tournament.prize_pool?.fifthPlace || 0)
-    ).toLocaleString()}
-  </p>
-  <p className="text-gray-400 text-sm">
-    Winner + Runner Up + 3rd + 4th + 5th Place
-  </p>
-</div>
-</div>
+          <div className="flex items-center space-x-3 mb-4">
+            <FaTrophy className="w-6 h-6 text-yellow-400" />
+            <h3 className="text-white font-semibold">Total Prize</h3>
+          </div>
+          <p className="text-2xl font-bold text-yellow-400">
+            ₹{(
+              (tournament.prize_pool?.winner || 0) +
+              (tournament.prize_pool?.runnerUp || 0) +
+              (tournament.prize_pool?.thirdPlace || 0) +
+              (tournament.prize_pool?.fourthPlace || 0) +
+              (tournament.prize_pool?.fifthPlace || 0)
+            ).toLocaleString()}
+          </p>
+          <p className="text-gray-400 text-sm">
+            Winner + Runner Up + 3rd + 4th + 5th Place
+          </p>
+        </div>
+      </div>
 
       <div className="bg-gradient-to-r from-cyan-500/10 to-purple-600/10 rounded-xl p-6 border border-cyan-500/20">
         <h3 className="text-white font-bold text-xl mb-4">Tournament Format</h3>
@@ -571,9 +626,9 @@ const OverviewTab = ({ tournament }) => {
             <h4 className="text-cyan-400 font-semibold mb-2">Match Structure</h4>
             <ul className="text-gray-300 space-y-2">
               <li>• {tournament.match_type} matches</li>
-              <li>• Best of 3 series</li>
-              <li>• Single elimination bracket</li>
-              <li>• Grand finals: Best of 5</li>
+              <li>• Matches held in official custom rooms.</li>
+              <li>• Room ID & Password shared before match starts.</li>
+              <li>• Players must join on time to be eligible.</li>
             </ul>
           </div>
           <div>
@@ -581,8 +636,9 @@ const OverviewTab = ({ tournament }) => {
             <ul className="text-gray-300 space-y-2">
               <li>• Stable internet connection</li>
               <li>• Discord for communication</li>
-              <li>• Screen recording enabled</li>
+              <li>• Register and pay entry fee on time.</li>
               <li>• Fair play agreement</li>
+              <li>• Use the same in-game ID as submitted.</li>
             </ul>
           </div>
         </div>
@@ -630,73 +686,209 @@ const AboutTab = ({ tournament }) => {
 }
 
 // Leaderboard Tab Component
-const LeaderboardTab = ({ leaderboard }) => {
+const LeaderboardTab = ({ leaderboard, topScores, scoresLoading, tournamentId }) => {
+  const router = useRouter()
+
+  const getMatchTypeIcon = (matchType) => {
+    const icons = {
+      solo: FaUser,
+      duo: FaUserFriends,
+      squad: FaSquad
+    }
+    const Icon = icons[matchType] || FaUsers
+    return <Icon className="w-3 h-3" />
+  }
+
+  const getMatchTypeColor = (matchType) => {
+    const colors = {
+      solo: 'text-cyan-400',
+      duo: 'text-purple-400',
+      squad: 'text-orange-400'
+    }
+    return colors[matchType] || 'text-gray-400'
+  }
+
+  const getRankBadge = (rank) => {
+    const badges = {
+      1: { color: 'from-yellow-400 to-yellow-600', text: '1st' },
+      2: { color: 'from-gray-400 to-gray-600', text: '2nd' },
+      3: { color: 'from-orange-400 to-orange-600', text: '3rd' },
+      4: { color: 'from-purple-400 to-purple-600', text: '4th' },
+      5: { color: 'from-cyan-400 to-cyan-600', text: '5th' }
+    }
+    
+    const badge = badges[rank] || { color: 'from-green-400 to-green-600', text: `${rank}th` }
+    
+    return (
+      <div className={`w-8 h-8 bg-gradient-to-br ${badge.color} rounded-lg flex items-center justify-center`}>
+        <span className="text-white font-bold text-xs">{badge.text}</span>
+      </div>
+    )
+  }
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount)
+  }
+
+  const handleViewCompleteScorecard = () => {
+    if (tournamentId) {
+      router.push(`/score/${tournamentId}`)
+    }
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-white font-bold text-xl">Tournament Leaderboard</h3>
         <div className="flex items-center space-x-2 text-cyan-400">
           <GiPodium className="w-5 h-5" />
-          <span>Live Rankings</span>
+          <span>Top Performers</span>
         </div>
       </div>
 
-      <div className="space-y-3">
+      {/* Top 5 Scores Section */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-white font-semibold text-lg">Top 5 Winners</h4>
+          {topScores.length > 0 && (
+            <button
+              onClick={handleViewCompleteScorecard}
+              className="flex items-center space-x-2 px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 text-cyan-400 rounded-lg transition-all duration-300"
+            >
+              <span>View Complete Scorecard</span>
+              <FaExternalLinkAlt className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+
+        {scoresLoading ? (
+          <div className="text-center py-8">
+            <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-cyan-400">Loading scores...</p>
+          </div>
+        ) : topScores.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+            {topScores.map((score) => (
+              <div
+                key={score.id}
+                className={`bg-gradient-to-r ${
+                  score.rank === 1 ? 'from-yellow-500/10 to-yellow-500/5 border-yellow-500/30' :
+                  score.rank === 2 ? 'from-gray-500/10 to-gray-500/5 border-gray-500/30' :
+                  score.rank === 3 ? 'from-orange-500/10 to-orange-500/5 border-orange-500/30' :
+                  'from-purple-500/10 to-purple-500/5 border-purple-500/30'
+                } border rounded-xl p-4 hover:shadow-lg transition-all duration-300`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    {getRankBadge(score.rank)}
+                    <div>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h5 className="text-white font-semibold">
+                          {score.match_type === 'solo' ? score.player_username : score.team_name}
+                        </h5>
+                        <div className={`flex items-center space-x-1 ${getMatchTypeColor(score.match_type)}`}>
+                          {getMatchTypeIcon(score.match_type)}
+                          <span className="text-xs">{score.match_type.toUpperCase()}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4 text-sm text-gray-300">
+                        <div className="flex items-center space-x-1">
+                          <FaSkull className="w-3 h-3 text-red-400" />
+                          <span>{score.kills} Kills</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <FaTrophy className="w-3 h-3 text-cyan-400" />
+                          <span>{score.points} Points</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-green-400">
+                      {formatCurrency(score.prize_won).replace('₹', '₹')}
+                    </div>
+                    <div className="text-sm text-gray-400">Prize Won</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 bg-gray-800/30 rounded-xl border border-gray-700/50">
+            <GiPodium className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h4 className="text-white font-semibold text-lg mb-2">Scorecard Not Released</h4>
+            <p className="text-gray-400">
+              The tournament scorecard hasn't been released yet. Check back after the tournament ends.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Original Leaderboard Section */}
+      <div className="border-t border-gray-700/50 pt-6">
+        <h4 className="text-white font-semibold text-lg mb-4">Live Leaderboard</h4>
         {leaderboard.length === 0 ? (
-          <div className="text-center py-12">
-            <GiPodium className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-white mb-2">No Leaderboard Data</h3>
+          <div className="text-center py-8 bg-gray-800/30 rounded-xl border border-gray-700/50">
+            <GiPodium className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h4 className="text-white font-semibold text-lg mb-2">No Leaderboard Data</h4>
             <p className="text-gray-400">Leaderboard will be updated once the tournament starts.</p>
           </div>
         ) : (
-          leaderboard.map((player, index) => (
-            <div
-              key={player.id}
-              className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${
-                index < 3
-                  ? 'bg-gradient-to-r from-yellow-500/10 to-yellow-500/5 border-yellow-500/30'
-                  : 'bg-gray-800/50 border-gray-700/50 hover:border-cyan-500/30'
-              }`}
-            >
-              <div className="flex items-center space-x-4">
-                <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold ${
-                  index === 0 ? 'bg-yellow-500 text-white' :
-                  index === 1 ? 'bg-gray-400 text-white' :
-                  index === 2 ? 'bg-orange-500 text-white' :
-                  'bg-gray-700 text-gray-300'
-                }`}>
-                  {index + 1}
-                </div>
-                <div>
-                  <div className="text-white font-semibold">
-                    {player.users?.gamer_tag || player.users?.username || 'Unknown Player'}
+          <div className="space-y-3">
+            {leaderboard.map((player, index) => (
+              <div
+                key={player.id}
+                className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${
+                  index < 3
+                    ? 'bg-gradient-to-r from-yellow-500/10 to-yellow-500/5 border-yellow-500/30'
+                    : 'bg-gray-800/50 border-gray-700/50 hover:border-cyan-500/30'
+                }`}
+              >
+                <div className="flex items-center space-x-4">
+                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold ${
+                    index === 0 ? 'bg-yellow-500 text-white' :
+                    index === 1 ? 'bg-gray-400 text-white' :
+                    index === 2 ? 'bg-orange-500 text-white' :
+                    'bg-gray-700 text-gray-300'
+                  }`}>
+                    {index + 1}
                   </div>
-                  <div className="text-gray-400 text-sm">Team: {player.team_id}</div>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-6 text-right">
-                <div>
-                  <div className="text-white font-bold">{player.score} pts</div>
-                  <div className="text-gray-400 text-sm">Score</div>
-                </div>
-                <div>
-                  <div className="text-green-400 font-bold">{player.kills}</div>
-                  <div className="text-gray-400 text-sm">Kills</div>
-                </div>
-                <div>
-                  <div className="text-red-400 font-bold">{player.deaths}</div>
-                  <div className="text-gray-400 text-sm">Deaths</div>
-                </div>
-                {player.prize_won > 0 && (
                   <div>
-                    <div className="text-yellow-400 font-bold">₹{player.prize_won}</div>
-                    <div className="text-gray-400 text-sm">Prize</div>
+                    <div className="text-white font-semibold">
+                      {player.users?.gamer_tag || player.users?.username || 'Unknown Player'}
+                    </div>
+                    <div className="text-gray-400 text-sm">Team: {player.team_id}</div>
                   </div>
-                )}
+                </div>
+                
+                <div className="flex items-center space-x-6 text-right">
+                  <div>
+                    <div className="text-white font-bold">{player.score} pts</div>
+                    <div className="text-gray-400 text-sm">Score</div>
+                  </div>
+                  <div>
+                    <div className="text-green-400 font-bold">{player.kills}</div>
+                    <div className="text-gray-400 text-sm">Kills</div>
+                  </div>
+                  <div>
+                    <div className="text-red-400 font-bold">{player.deaths}</div>
+                    <div className="text-gray-400 text-sm">Deaths</div>
+                  </div>
+                  {player.prize_won > 0 && (
+                    <div>
+                      <div className="text-yellow-400 font-bold">₹{player.prize_won}</div>
+                      <div className="text-gray-400 text-sm">Prize</div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
     </div>
@@ -831,7 +1023,7 @@ const MyTeamTab = ({ enrollment }) => {
   )
 }
 
-// Enroll Modal Component with Margins
+// Enroll Modal Component
 const EnrollModal = ({ tournament, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     in_game_nickname: '',

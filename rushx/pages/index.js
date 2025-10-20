@@ -237,7 +237,7 @@ const HomePage = () => {
   }, [featuredTournaments.length])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900/30 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900/30 pt-5">
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl"></div>
@@ -248,6 +248,7 @@ const HomePage = () => {
       <div className="relative z-10">
         {/* Hero Section with Featured Tournaments */}
         <FeaturedTournaments 
+        
           tournaments={featuredTournaments}
           currentIndex={currentFeaturedIndex}
           onNext={nextFeatured}
@@ -647,17 +648,25 @@ const FeaturedTournaments = ({ tournaments, currentIndex, onNext, onPrev, getSta
       {tournaments.length > 1 && (
         <>
           <button
-            onClick={onPrev}
-            className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-gray-900/80 backdrop-blur-xl border border-cyan-500/30 rounded-full flex items-center justify-center text-cyan-400 hover:text-white hover:bg-cyan-500/20 transition-all duration-300 z-20"
-          >
-            <FaChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-          <button
-            onClick={onNext}
-            className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-gray-900/80 backdrop-blur-xl border border-cyan-500/30 rounded-full flex items-center justify-center text-cyan-400 hover:text-white hover:bg-cyan-500/20 transition-all duration-300 z-20"
-          >
-            <FaChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
+  onClick={onPrev}
+  className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 w-7 h-7 sm:w-10 sm:h-10 
+             sm:bg-gray-900/80 sm:backdrop-blur-xl sm:border sm:border-cyan-500/30 
+             rounded-full flex items-center justify-center text-cyan-400 
+             hover:text-white hover:bg-cyan-500/20 transition-all duration-300 z-20"
+>
+  <FaChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+</button>
+
+<button
+  onClick={onNext}
+  className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 w-7 h-7 sm:w-10 sm:h-10 
+             sm:bg-gray-900/80 sm:backdrop-blur-xl sm:border sm:border-cyan-500/30 
+             rounded-full flex items-center justify-center text-cyan-400 
+             hover:text-white hover:bg-cyan-500/20 transition-all duration-300 z-20"
+>
+  <FaChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+</button>
+
         </>
       )}
 
