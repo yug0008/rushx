@@ -104,8 +104,8 @@ const Footer = () => {
       icon: <FaUsers className="w-4 h-4" />,
       links: [
         { name: 'Players', href: '/players', icon: <FaCrown className="w-3 h-3" /> },
-        { name: 'Instagram', href: 'https://instagram.com', icon: <FaInstagram className="w-3 h-3" /> },
-        { name: 'YouTube', href: 'https://youtube.com', icon: <FaYoutube className="w-3 h-3" /> },
+        { name: 'Instagram', href: 'https://www.instagram.com/rushx.live/', icon: <FaInstagram className="w-3 h-3" /> },
+        { name: 'YouTube', href: 'https://www.youtube.com/@DARK_EMPIRE-Rush', icon: <FaYoutube className="w-3 h-3" /> },
         { name: 'Discord', href: 'https://discord.gg/42Q9Nyc4', icon: <FaDiscord className="w-3 h-3" /> },
       ],
     },
@@ -124,10 +124,10 @@ const Footer = () => {
 
   const socialLinks = [
     { name: 'Twitch', icon: <FaTwitch className="w-5 h-5" />, href: 'https://twitch.tv' },
-    { name: 'YouTube', icon: <FaYoutube className="w-5 h-5" />, href: 'https://youtube.com' },
+    { name: 'YouTube', icon: <FaYoutube className="w-5 h-5" />, href: 'https://www.youtube.com/@DARK_EMPIRE-Rush' },
     { name: 'Twitter', icon: <FaTwitter className="w-5 h-5" />, href: 'https://twitter.com' },
-    { name: 'Discord', icon: <FaDiscord className="w-5 h-5" />, href: 'https://discord.gg' },
-    { name: 'Instagram', icon: <FaInstagram className="w-5 h-5" />, href: 'https://instagram.com' },
+    { name: 'Discord', icon: <FaDiscord className="w-5 h-5" />, href: 'https://discord.gg/42Q9Nyc4' },
+    { name: 'Instagram', icon: <FaInstagram className="w-5 h-5" />, href: 'https://www.instagram.com/rushx.live/' },
   ];
 
   const partners = [

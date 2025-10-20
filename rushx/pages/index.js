@@ -204,7 +204,7 @@ const HomePage = () => {
     },
     {
       question: "What games do you support?",
-      answer: "We support all major e-sports titles including Valorant, CS:GO, Dota 2, League of Legends, Fortnite, Call of Duty, and many more. Check individual tournament details for specific game requirements."
+      answer: "We support all major e-sports titles including Free Fire, BGMI, Valorant, CS:GO, Dota 2, League of Legends, Fortnite, Call of Duty, and many more. Check individual tournament details for specific game requirements."
     },
     {
       question: "How are prizes distributed?",

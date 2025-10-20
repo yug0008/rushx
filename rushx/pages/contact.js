@@ -146,7 +146,7 @@ const ContactPage = () => {
                       </div>
                       <div>
                         <p className="text-gray-400 text-sm">Email</p>
-                        <p className="text-white font-semibold">support@rushx.in</p>
+                        <p className="text-white font-semibold">support@rushx.live</p>
                       </div>
                     </div>
 

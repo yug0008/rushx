@@ -44,7 +44,7 @@ export default function FAQ() {
     {
       question: "How can I contact RushX support?",
       answer:
-        "You can reach out through the in-site Support Chat or email us at support@rushx.gg. Our team is available 24/7 to help with payment, tournament, or technical issues.",
+        "You can reach out through the in-site Support Chat or email us at support@rushx.live. Our team is available 24/7 to help with payment, tournament, or technical issues.",
     },
     {
       question: "Is there a refund policy for tournaments?",
