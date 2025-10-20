@@ -92,9 +92,22 @@ const SchedulePage = () => {
         case 'participants':
           return b.current_participants - a.current_participants
         case 'prize_pool':
-          const prizeA = (a.prize_pool?.winner || 0) + (a.prize_pool?.runnerUp || 0)
-          const prizeB = (b.prize_pool?.winner || 0) + (b.prize_pool?.runnerUp || 0)
-          return prizeB - prizeA
+  const prizeA =
+    (a.prize_pool?.winner || 0) +
+    (a.prize_pool?.runnerUp || 0) +
+    (a.prize_pool?.thirdPlace || 0) +
+    (a.prize_pool?.fourthPlace || 0) +
+    (a.prize_pool?.fifthPlace || 0);
+
+  const prizeB =
+    (b.prize_pool?.winner || 0) +
+    (b.prize_pool?.runnerUp || 0) +
+    (b.prize_pool?.thirdPlace || 0) +
+    (b.prize_pool?.fourthPlace || 0) +
+    (b.prize_pool?.fifthPlace || 0);
+
+  return prizeB - prizeA;
+
         default:
           return 0
       }
@@ -157,13 +170,14 @@ const SchedulePage = () => {
         {/* Header Section */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center">
-              <FaCalendarAlt className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-5xl lg:text-7xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              Tournament Schedule
-            </h1>
-          </div>
+  <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center">
+    <FaCalendarAlt className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+  </div>
+  <h1 className="text-2xl sm:text-5xl lg:text-7xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+    Tournament Schedule
+  </h1>
+</div>
+
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
             Never miss a tournament! Browse all upcoming events, check schedules, and join the competition.
           </p>
@@ -171,78 +185,78 @@ const SchedulePage = () => {
 
        
         {/* Search and Filters */}
-        <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6 mb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="lg:col-span-2">
-              <div className="relative">
-                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search tournaments or games..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300"
-                />
-              </div>
-            </div>
+<div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-4 sm:p-6 mb-8">
+  <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4">
+    {/* Search */}
+    <div className="lg:col-span-2">
+      <div className="relative">
+        <FaSearch className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
+        <input
+          type="text"
+          placeholder="Search tournaments or games..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white text-sm sm:text-base placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300"
+        />
+      </div>
+    </div>
 
-            {/* Status Filter */}
-            <div>
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition-colors duration-300"
-              >
-                <option value="all">All Status</option>
-                <option value="upcoming">Upcoming</option>
-                <option value="ongoing">Live Now</option>
-                <option value="registration_closed">Registration Closed</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
+    {/* Status Filter */}
+    <div>
+      <select
+        value={filters.status}
+        onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+        className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300"
+      >
+        <option value="all">All Status</option>
+        <option value="upcoming">Upcoming</option>
+        <option value="ongoing">Live Now</option>
+        <option value="registration_closed">Registration Closed</option>
+        <option value="completed">Completed</option>
+      </select>
+    </div>
 
-            {/* Sort By */}
-            <div>
-              <select
-                value={filters.sortBy}
-                onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition-colors duration-300"
-              >
-                <option value="start_date">Sort by Date</option>
-                <option value="participants">Sort by Participants</option>
-                <option value="prize_pool">Sort by Prize Pool</option>
-              </select>
-            </div>
-          </div>
+    {/* Sort By */}
+    <div>
+      <select
+        value={filters.sortBy}
+        onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
+        className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300"
+      >
+        <option value="start_date">Sort by Date</option>
+        <option value="participants">Sort by Participants</option>
+        <option value="prize_pool">Sort by Prize Pool</option>
+      </select>
+    </div>
+  </div>
 
-          {/* Game Filter Chips */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            <button
-              onClick={() => setFilters(prev => ({ ...prev, game: 'all' }))}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                filters.game === 'all'
-                  ? 'bg-cyan-500 text-white'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              All Games
-            </button>
-            {availableGames.map((game) => (
-              <button
-                key={game}
-                onClick={() => setFilters(prev => ({ ...prev, game }))}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                  filters.game === game
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                {game}
-              </button>
-            ))}
-          </div>
-        </div>
+  {/* Game Filter Chips */}
+  <div className="flex flex-wrap gap-1 sm:gap-2 mt-3 sm:mt-4">
+    <button
+      onClick={() => setFilters(prev => ({ ...prev, game: 'all' }))}
+      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 ${
+        filters.game === 'all'
+          ? 'bg-cyan-500 text-white'
+          : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+      }`}
+    >
+      All Games
+    </button>
+    {availableGames.map((game) => (
+      <button
+        key={game}
+        onClick={() => setFilters(prev => ({ ...prev, game }))}
+        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 ${
+          filters.game === game
+            ? 'bg-purple-500 text-white'
+            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+        }`}
+      >
+        {game}
+      </button>
+    ))}
+  </div>
+</div>
 
         {/* Tournaments Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
@@ -361,7 +375,16 @@ const TournamentCard = ({ tournament, onViewDetails }) => {
           </div>
           <div className="flex items-center space-x-2 text-gray-300">
             <FaTrophy className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm">₹{(prizePool.winner + prizePool.runnerUp).toLocaleString()}</span>
+           <span className="text-sm">
+  ₹{(
+    (prizePool.winner || 0) +
+    (prizePool.runnerUp || 0) +
+    (prizePool.thirdPlace || 0) +
+    (prizePool.fourthPlace || 0) +
+    (prizePool.fifthPlace || 0)
+  ).toLocaleString()}
+</span>
+
           </div>
           <div className="flex items-center space-x-2 text-gray-300">
             <FaClock className="w-4 h-4 text-purple-400" />
