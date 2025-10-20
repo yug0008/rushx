@@ -169,49 +169,7 @@ const SchedulePage = () => {
           </p>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6 text-center">
-            <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <FaCalendarAlt className="w-6 h-6 text-cyan-400" />
-            </div>
-            <div className="text-3xl font-bold text-white mb-1">
-              {filteredTournaments.filter(t => getTournamentStatus(t) === 'upcoming').length}
-            </div>
-            <div className="text-gray-400">Upcoming</div>
-          </div>
-
-          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6 text-center">
-            <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <FaPlayCircle className="w-6 h-6 text-purple-400" />
-            </div>
-            <div className="text-3xl font-bold text-white mb-1">
-              {filteredTournaments.filter(t => getTournamentStatus(t) === 'ongoing').length}
-            </div>
-            <div className="text-gray-400">Live Now</div>
-          </div>
-
-          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-green-500/30 p-6 text-center">
-            <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <FaUsers className="w-6 h-6 text-green-400" />
-            </div>
-            <div className="text-3xl font-bold text-white mb-1">
-              {filteredTournaments.reduce((sum, t) => sum + t.current_participants, 0)}
-            </div>
-            <div className="text-gray-400">Total Players</div>
-          </div>
-
-          <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-yellow-500/30 p-6 text-center">
-            <div className="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <GiTrophyCup className="w-6 h-6 text-yellow-400" />
-            </div>
-            <div className="text-3xl font-bold text-white mb-1">
-              ₹{filteredTournaments.reduce((sum, t) => sum + (t.prize_pool?.winner || 0) + (t.prize_pool?.runnerUp || 0), 0).toLocaleString()}
-            </div>
-            <div className="text-gray-400">Total Prize</div>
-          </div>
-        </div>
-
+       
         {/* Search and Filters */}
         <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6 mb-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
