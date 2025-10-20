@@ -1039,90 +1039,122 @@ const EnrollModal = ({ tournament, onClose, onSubmit }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
-      
-      <div className="relative bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl shadow-cyan-500/20 w-full max-w-2xl mx-4 my-8">
-        <div className="p-6 border-b border-cyan-500/20">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-white">Join Tournament</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-              <FaArrowLeft className="w-5 h-5" />
-            </button>
-          </div>
-          <p className="text-cyan-400">Complete your registration for {tournament.title}</p>
+  {/* Overlay */}
+  <div
+    className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+    onClick={onClose}
+  ></div>
+
+  {/* Modal */}
+  <div className="relative bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl shadow-cyan-500/20 w-full max-w-2xl mx-4 my-12 sm:my-16">
+    {/* Header */}
+    <div className="p-4 sm:p-6 border-b border-cyan-500/20">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl sm:text-2xl font-bold text-white">Join Tournament</h2>
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-white transition-colors"
+        >
+          <FaArrowLeft className="w-4 sm:w-5 h-4 sm:h-5" />
+        </button>
+      </div>
+      <p className="text-cyan-400 text-sm sm:text-base mt-1 sm:mt-2">
+        Complete your registration for {tournament.title}
+      </p>
+    </div>
+
+    {/* Form */}
+    <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        {/* In-Game Nickname */}
+        <div>
+          <label className="block text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2">
+            In-Game Nickname *
+          </label>
+          <input
+            type="text"
+            required
+            value={formData.in_game_nickname}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, in_game_nickname: e.target.value }))
+            }
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300"
+            placeholder="Enter your in-game name"
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-white font-semibold mb-2">In-Game Nickname *</label>
-              <input
-                type="text"
-                required
-                value={formData.in_game_nickname}
-                onChange={(e) => setFormData(prev => ({...prev, in_game_nickname: e.target.value}))}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300"
-                placeholder="Enter your in-game name"
-              />
-            </div>
+        {/* Game UID */}
+        <div>
+          <label className="block text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2">
+            Game UID *
+          </label>
+          <input
+            type="text"
+            required
+            value={formData.game_uid}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, game_uid: e.target.value }))
+            }
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300"
+            placeholder="Your game user ID"
+          />
+        </div>
 
-            <div>
-              <label className="block text-white font-semibold mb-2">Game UID *</label>
-              <input
-                type="text"
-                required
-                value={formData.game_uid}
-                onChange={(e) => setFormData(prev => ({...prev, game_uid: e.target.value}))}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300"
-                placeholder="Your game user ID"
-              />
-            </div>
+        {/* Mobile Number */}
+        <div>
+          <label className="block text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2">
+            Mobile Number *
+          </label>
+          <input
+            type="tel"
+            required
+            value={formData.mobile_number}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, mobile_number: e.target.value }))
+            }
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300"
+            placeholder="+91 XXXXX XXXXX"
+          />
+        </div>
 
-            <div>
-              <label className="block text-white font-semibold mb-2">Mobile Number *</label>
-              <input
-                type="tel"
-                required
-                value={formData.mobile_number}
-                onChange={(e) => setFormData(prev => ({...prev, mobile_number: e.target.value}))}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300"
-                placeholder="+91 XXXXX XXXXX"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-white font-semibold mb-2">Address *</label>
-              <textarea
-                required
-                rows={3}
-                value={formData.address}
-                onChange={(e) => setFormData(prev => ({...prev, address: e.target.value}))}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300 resize-none"
-                placeholder="Your complete address"
-              />
-            </div>
-          </div>
-
-         <div className="flex space-x-3 pt-4">
-  <button
-    type="button"
-    onClick={onClose}
-    className="flex-1 px-4 py-2 sm:px-6 sm:py-3 border border-gray-600 text-sm sm:text-base text-gray-300 rounded-lg sm:rounded-xl hover:bg-gray-800 transition-colors duration-300"
-  >
-    Cancel
-  </button>
-  <button
-    type="submit"
-    className="flex-1 px-4 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-sm sm:text-base text-white font-semibold rounded-lg sm:rounded-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300"
-  >
-    Proceed - ₹{tournament.joining_fee}
-  </button>
-</div>
-
-        </form>
+        {/* Address */}
+        <div className="md:col-span-2">
+          <label className="block text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2">
+            Address *
+          </label>
+          <textarea
+            required
+            rows={2}
+            value={formData.address}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, address: e.target.value }))
+            }
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300 resize-none"
+            placeholder="Your complete address"
+          />
+        </div>
       </div>
-    </div>
-  )
+
+      {/* Buttons */}
+      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-2 sm:pt-4">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex-1 px-4 sm:px-6 py-2 sm:py-3 border border-gray-600 text-sm sm:text-base text-gray-300 rounded-lg sm:rounded-xl hover:bg-gray-800 transition-colors duration-300"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-sm sm:text-base text-white font-semibold rounded-lg sm:rounded-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300"
+        >
+          Proceed - ₹{tournament.joining_fee}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+)
 }
 
 // Payment Modal Component
@@ -1199,140 +1231,152 @@ const PaymentModal = ({ tournament, enrollmentData, onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
-      
-      <div className="relative bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl shadow-cyan-500/20 w-full max-w-4xl mx-2 sm:mx-4 my-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-4 sm:p-6 border-b border-cyan-500/20 sticky top-0 bg-gray-900/95 z-10">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-bold text-white">Complete Payment</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-1">
-              <FaArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
+  {/* Overlay */}
+  <div
+    className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+    onClick={onClose}
+  ></div>
+
+  {/* Modal */}
+  <div className="relative bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl shadow-cyan-500/20 w-full max-w-4xl mx-2 sm:mx-4 my-6 sm:my-8 max-h-[90vh] overflow-y-auto">
+    {/* Header */}
+    <div className="p-3 sm:p-5 border-b border-cyan-500/20 sticky top-0 bg-gray-900/95 z-10">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg sm:text-xl font-bold text-white">Complete Payment</h2>
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-white transition-colors p-1"
+        >
+          <FaArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
+      </div>
+      <p className="text-cyan-400 text-xs sm:text-sm mt-1 sm:mt-2">
+        Pay entry fee to join {tournament.title}
+      </p>
+    </div>
+
+    {/* Content */}
+    <div className="p-3 sm:p-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        {/* QR Code Section */}
+        <div className="text-center space-y-3 sm:space-y-4">
+          <div className="bg-white p-2 sm:p-5 rounded-2xl inline-block">
+            <div className="w-40 h-40 sm:w-60 sm:h-60 bg-white flex items-center justify-center rounded-lg border-2 border-gray-300">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(generateQRCodeData())}`}
+                alt="UPI Payment QR Code"
+                className="w-full h-full object-contain"
+              />
+            </div>
           </div>
-          <p className="text-cyan-400 text-sm sm:text-base">Pay entry fee to join {tournament.title}</p>
+
+          <div className="space-y-2 sm:space-y-3">
+            <p className="text-gray-300 text-xs sm:text-sm">
+              Scan QR code to pay <span className="text-cyan-400 font-bold">₹{tournament.joining_fee}</span>
+            </p>
+
+            <div className="bg-cyan-500/20 border border-cyan-500/50 rounded-xl p-2 sm:p-3">
+              <p className="text-cyan-400 font-mono text-xs sm:text-sm break-all">
+                UPI ID: rushx@ptaxis
+              </p>
+            </div>
+
+            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-2 sm:p-3">
+              <div className="flex items-center justify-center space-x-2 mb-1">
+                <IoMdAlert className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
+                <h4 className="text-yellow-400 font-semibold text-xs sm:text-sm">Manual Payment</h4>
+              </div>
+              <p className="text-yellow-300 text-xs sm:text-sm">
+                If QR doesn't work, send ₹{tournament.joining_fee} to rushx@ptaxis
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="p-4 sm:p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-            {/* QR Code Section */}
-            <div className="text-center space-y-4 sm:space-y-6">
-              <div className="bg-white p-3 sm:p-6 rounded-2xl inline-block">
-                <div className="w-48 h-48 sm:w-64 sm:h-64 bg-white flex items-center justify-center rounded-lg border-2 border-gray-300">
-                  {/* Real QR Code Implementation */}
-                  <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(generateQRCodeData())}`}
-                    alt="UPI Payment QR Code"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-3 sm:space-y-4">
-                <p className="text-gray-300 text-sm sm:text-base">
-                  Scan QR code to pay <span className="text-cyan-400 font-bold">₹{tournament.joining_fee}</span>
-                </p>
-                
-                <div className="bg-cyan-500/20 border border-cyan-500/50 rounded-xl p-3 sm:p-4">
-                  <p className="text-cyan-400 font-mono text-sm sm:text-lg break-all">
-                    UPI ID: rushx@ptaxis
-                  </p>
-                </div>
-
-                <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-3 sm:p-4">
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    <IoMdAlert className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
-                    <h4 className="text-yellow-400 font-semibold text-sm sm:text-base">Manual Payment</h4>
-                  </div>
-                  <p className="text-yellow-300 text-xs sm:text-sm">
-                    If QR doesn't work, send ₹{tournament.joining_fee} to rushx@ptaxis
-                  </p>
-                </div>
-              </div>
+        {/* Transaction Form */}
+        <div className="space-y-3 sm:space-y-4">
+          <form onSubmit={handlePaymentSubmit} className="space-y-3 sm:space-y-4">
+            <div>
+              <label className="block text-white font-semibold mb-1 text-xs sm:text-sm">
+                Transaction ID *
+              </label>
+              <input
+                type="text"
+                required
+                value={transactionId}
+                onChange={(e) => setTransactionId(e.target.value)}
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300 text-xs sm:text-sm"
+                placeholder="Enter UPI transaction ID"
+              />
+              <p className="text-gray-400 text-xs mt-1">
+                Find this in your UPI app after payment
+              </p>
             </div>
 
-            {/* Transaction Form */}
-            <div className="space-y-4 sm:space-y-6">
-              <form onSubmit={handlePaymentSubmit} className="space-y-4 sm:space-y-6">
+            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-2 sm:p-3">
+              <div className="flex items-start space-x-2 mb-1">
+                <IoMdAlert className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <label className="block text-white font-semibold mb-2 text-sm sm:text-base">
-                    Transaction ID *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={transactionId}
-                    onChange={(e) => setTransactionId(e.target.value)}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300 text-sm sm:text-base"
-                    placeholder="Enter UPI transaction ID"
-                  />
-                  <p className="text-gray-400 text-xs sm:text-sm mt-1">
-                    Find this in your UPI app after payment
-                  </p>
+                  <h4 className="text-yellow-400 font-semibold text-xs sm:text-sm mb-1">
+                    Important Instructions
+                  </h4>
+                  <ul className="text-yellow-300 text-xs sm:text-sm space-y-1">
+                    <li>• Payment must be done via UPI only</li>
+                    <li>• Save transaction ID for verification</li>
+                    <li>• Enrollment will be under review until payment verification</li>
+                    <li>• Team ID will be assigned after successful verification</li>
+                    <li>• No refunds after successful registration</li>
+                  </ul>
                 </div>
-
-                <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-3 sm:p-4">
-                  <div className="flex items-start space-x-2 mb-2">
-                    <IoMdAlert className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h4 className="text-yellow-400 font-semibold text-sm sm:text-base mb-1">
-                        Important Instructions
-                      </h4>
-                      <ul className="text-yellow-300 text-xs sm:text-sm space-y-1">
-                        <li>• Payment must be done via UPI only</li>
-                        <li>• Save transaction ID for verification</li>
-                        <li>• Enrollment will be under review until payment verification</li>
-                        <li>• Team ID will be assigned after successful verification</li>
-                        <li>• No refunds after successful registration</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-2">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="flex-1 px-4 sm:px-6 py-2 sm:py-3 border border-gray-600 text-gray-300 rounded-xl hover:bg-gray-800 transition-colors duration-300 text-sm sm:text-base"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 disabled:opacity-50 text-sm sm:text-base"
-                  >
-                    {loading ? 'Processing...' : 'Submit Enrollment'}
-                  </button>
-                </div>
-              </form>
-
-              {/* Payment Steps */}
-              <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                <h4 className="text-white font-semibold text-sm sm:text-base mb-3">Payment Steps:</h4>
-                <ol className="text-gray-300 text-xs sm:text-sm space-y-2">
-                  <li className="flex items-start space-x-2">
-                    <span className="bg-cyan-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">1</span>
-                    <span>Scan QR code with any UPI app</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className="bg-cyan-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">2</span>
-                    <span>Pay ₹{tournament.joining_fee} to RushX Esports</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className="bg-cyan-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">3</span>
-                    <span>Copy transaction ID from payment receipt</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className="bg-cyan-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">4</span>
-                    <span>Paste transaction ID and submit form</span>
-                  </li>
-                </ol>
               </div>
             </div>
+
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 border border-gray-600 text-gray-300 rounded-xl hover:bg-gray-800 transition-colors duration-300 text-xs sm:text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 disabled:opacity-50 text-xs sm:text-sm"
+              >
+                {loading ? 'Processing...' : 'Submit Enrollment'}
+              </button>
+            </div>
+          </form>
+
+          {/* Payment Steps */}
+          <div className="bg-gray-800/50 rounded-xl p-3 sm:p-4 border border-gray-700/50">
+            <h4 className="text-white font-semibold text-xs sm:text-sm mb-2">Payment Steps:</h4>
+            <ol className="text-gray-300 text-xs sm:text-sm space-y-1">
+              <li className="flex items-start space-x-2">
+                <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">1</span>
+                <span>Scan QR code with any UPI app</span>
+              </li>
+              <li className="flex items-start space-x-2">
+                <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">2</span>
+                <span>Pay ₹{tournament.joining_fee} to RushX Esports</span>
+              </li>
+              <li className="flex items-start space-x-2">
+                <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">3</span>
+                <span>Copy transaction ID from payment receipt</span>
+              </li>
+              <li className="flex items-start space-x-2">
+                <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">4</span>
+                <span>Paste transaction ID and submit form</span>
+              </li>
+            </ol>
           </div>
         </div>
       </div>
     </div>
+  </div>
+</div>
+
   )
 }
 
