@@ -1203,7 +1203,7 @@ const PaymentModal = ({ tournament, enrollmentData, onClose, onSuccess }) => {
         .insert({
           user_id: user.id,
           title: 'Payment Verification Required',
-          message: `New enrollment for ${tournament.title}. Transaction ID: ${transactionId}`,
+          message: `New enrollment for ${tournament.title}. UTR / UPI Ref ID : ${transactionId}`,
           type: 'warning',
           related_tournament_id: tournament.id
         })
@@ -1298,7 +1298,7 @@ const PaymentModal = ({ tournament, enrollmentData, onClose, onSuccess }) => {
           <form onSubmit={handlePaymentSubmit} className="space-y-3 sm:space-y-4">
             <div>
               <label className="block text-white font-semibold mb-1 text-xs sm:text-sm">
-                Transaction ID *
+                UTR / UPI Ref ID (12-digit code) *
               </label>
               <input
                 type="text"
@@ -1306,10 +1306,10 @@ const PaymentModal = ({ tournament, enrollmentData, onClose, onSuccess }) => {
                 value={transactionId}
                 onChange={(e) => setTransactionId(e.target.value)}
                 className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300 text-xs sm:text-sm"
-                placeholder="Enter UPI transaction ID"
+                placeholder="Enter UPI UTR / UPI Ref ID "
               />
               <p className="text-gray-400 text-xs mt-1">
-                Find this in your UPI app after payment
+                After payment, you’ll get a UTR / UPI Ref ID (12-digit code) in your UPI app.
               </p>
             </div>
 
@@ -1322,7 +1322,7 @@ const PaymentModal = ({ tournament, enrollmentData, onClose, onSuccess }) => {
                   </h4>
                   <ul className="text-yellow-300 text-xs sm:text-sm space-y-1">
                     <li>• Payment must be done via UPI only</li>
-                    <li>• Save transaction ID for verification</li>
+                    <li>• Save UTR / UPI Ref ID (12-digit code) for verification</li>
                     <li>• Enrollment will be under review until payment verification</li>
                     <li>• Team ID will be assigned after successful verification</li>
                     <li>• No refunds after successful registration</li>
@@ -1363,11 +1363,11 @@ const PaymentModal = ({ tournament, enrollmentData, onClose, onSuccess }) => {
               </li>
               <li className="flex items-start space-x-2">
                 <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">3</span>
-                <span>Copy transaction ID from payment receipt</span>
+                <span>Copy UTR / UPI Ref ID (12-digit code) from payment receipt</span>
               </li>
               <li className="flex items-start space-x-2">
                 <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">4</span>
-                <span>Paste transaction ID and submit form</span>
+                <span>Paste UTR / UPI Ref ID (12-digit code) and submit form</span>
               </li>
             </ol>
           </div>
