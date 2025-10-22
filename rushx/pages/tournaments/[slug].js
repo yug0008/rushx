@@ -26,7 +26,11 @@ import {
   FaSkull,
   FaUser,
   FaUserFriends,
-  FaUsers as FaSquad
+  FaUsers as FaSquad,
+  FaGift,
+  FaTag,
+  FaCopy,
+  FaPercentage
 } from 'react-icons/fa'
 import { GiTrophyCup, GiPodium } from 'react-icons/gi'
 import { IoMdAlert } from 'react-icons/io'
@@ -961,6 +965,18 @@ const MyTeamTab = ({ enrollment }) => {
               <span className="text-gray-400">Game UID:</span>
               <span className="text-white font-semibold">{enrollment.game_uid}</span>
             </div>
+            {enrollment.referral_code && (
+              <div className="flex justify-between">
+                <span className="text-gray-400">Referral Code:</span>
+                <span className="text-purple-400 font-semibold">{enrollment.referral_code}</span>
+              </div>
+            )}
+            {enrollment.referral_discount && (
+              <div className="flex justify-between">
+                <span className="text-gray-400">Referral Discount:</span>
+                <span className="text-green-400 font-semibold">₹{enrollment.referral_discount}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1023,152 +1039,274 @@ const MyTeamTab = ({ enrollment }) => {
   )
 }
 
-// Enroll Modal Component
+// Enroll Modal Component - UPDATED WITH REFERRAL CODE
 const EnrollModal = ({ tournament, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     in_game_nickname: '',
     game_uid: '',
     mobile_number: '',
-    address: ''
+    address: '',
+    referral_code: ''
   })
+  const [referralValid, setReferralValid] = useState(null)
+  const [checkingReferral, setCheckingReferral] = useState(false)
+  const [referralData, setReferralData] = useState(null)
+
+  const validateReferralCode = async (code) => {
+    if (!code || code.length < 3) {
+      setReferralValid(null)
+      setReferralData(null)
+      return
+    }
+
+    setCheckingReferral(true)
+    try {
+      const { data, error } = await supabase
+        .from('referral_codes')
+        .select('*')
+        .eq('code', code.toUpperCase())
+        .eq('is_active', true)
+        .single()
+
+      if (error) throw error
+      
+      setReferralValid(!!data)
+      setReferralData(data)
+    } catch (error) {
+      console.error('Error validating referral code:', error)
+      setReferralValid(false)
+      setReferralData(null)
+    } finally {
+      setCheckingReferral(false)
+    }
+  }
+
+  const handleReferralCodeChange = (e) => {
+    const code = e.target.value
+    setFormData(prev => ({ ...prev, referral_code: code }))
+    
+    // Debounce validation
+    const timeoutId = setTimeout(() => {
+      validateReferralCode(code)
+    }, 500)
+    
+    return () => clearTimeout(timeoutId)
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit(formData)
+    
+    // Include referral validation in form data
+    onSubmit({
+      ...formData,
+      referralValid: referralValid,
+      referralData: referralData
+    })
   }
+
+  // Calculate discount for display
+  const discountAmount = referralValid ? tournament.joining_fee * 0.1 : 0
+  const finalAmount = tournament.joining_fee - discountAmount
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-  {/* Overlay */}
-  <div
-    className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-    onClick={onClose}
-  ></div>
+      {/* Overlay */}
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      ></div>
 
-  {/* Modal */}
-  <div className="relative bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl shadow-cyan-500/20 w-full max-w-2xl mx-4 my-12 sm:my-16">
-    {/* Header */}
-    <div className="p-4 sm:p-6 border-b border-cyan-500/20">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl sm:text-2xl font-bold text-white">Join Tournament</h2>
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-white transition-colors"
-        >
-          <FaArrowLeft className="w-4 sm:w-5 h-4 sm:h-5" />
-        </button>
+      {/* Modal */}
+      <div className="relative bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl shadow-cyan-500/20 w-full max-w-2xl mx-4 my-12 sm:my-16">
+        {/* Header */}
+        <div className="p-4 sm:p-6 border-b border-cyan-500/20">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Join Tournament</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <FaArrowLeft className="w-4 sm:w-5 h-4 sm:h-5" />
+            </button>
+          </div>
+          <p className="text-cyan-400 text-sm sm:text-base mt-1 sm:mt-2">
+            Complete your registration for {tournament.title}
+          </p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {/* In-Game Nickname */}
+            <div>
+              <label className="block text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2">
+                In-Game Nickname *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.in_game_nickname}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, in_game_nickname: e.target.value }))
+                }
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300"
+                placeholder="Enter your in-game name"
+              />
+            </div>
+
+            {/* Game UID */}
+            <div>
+              <label className="block text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2">
+                Game UID *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.game_uid}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, game_uid: e.target.value }))
+                }
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300"
+                placeholder="Your game user ID"
+              />
+            </div>
+
+            {/* Mobile Number */}
+            <div>
+              <label className="block text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2">
+                Mobile Number *
+              </label>
+              <input
+                type="tel"
+                required
+                value={formData.mobile_number}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, mobile_number: e.target.value }))
+                }
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300"
+                placeholder="+91 XXXXX XXXXX"
+              />
+            </div>
+
+            {/* Referral Code */}
+            <div>
+              <label className="block text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2">
+                Referral Code (Optional)
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.referral_code}
+                  onChange={handleReferralCodeChange}
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300"
+                  placeholder="Enter referral code for 10% OFF"
+                />
+                {checkingReferral && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="w-4 h-4 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin"></div>
+                  </div>
+                )}
+                {referralValid === true && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <FaCheckCircle className="w-4 h-4 text-green-400" />
+                  </div>
+                )}
+                {referralValid === false && formData.referral_code.length > 2 && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <IoMdAlert className="w-4 h-4 text-red-400" />
+                  </div>
+                )}
+              </div>
+              
+              {/* Referral Status Messages */}
+              {referralValid === true && (
+                <div className="mt-2 p-2 bg-green-500/20 border border-green-500/30 rounded-lg">
+                  <p className="text-green-400 text-sm">
+                    ✅ Valid code! You'll get 10% OFF (Save ₹{discountAmount})
+                  </p>
+                  <p className="text-green-300 text-xs mt-1">
+                    Final amount: ₹{finalAmount} instead of ₹{tournament.joining_fee}
+                  </p>
+                </div>
+              )}
+              {referralValid === false && formData.referral_code.length > 2 && (
+                <p className="text-red-400 text-xs mt-1">
+                  Invalid referral code. Please check and try again.
+                </p>
+              )}
+              {formData.referral_code && referralValid === null && !checkingReferral && (
+                <p className="text-yellow-400 text-xs mt-1">
+                  Enter at least 3 characters to validate referral code
+                </p>
+              )}
+            </div>
+
+            {/* Address */}
+            <div className="md:col-span-2">
+              <label className="block text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2">
+                Address *
+              </label>
+              <textarea
+                required
+                rows={2}
+                value={formData.address}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, address: e.target.value }))
+                }
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300 resize-none"
+                placeholder="Your complete address"
+              />
+            </div>
+          </div>
+
+          
+
+          {/* Buttons */}
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-2 sm:pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 sm:px-6 py-2 sm:py-3 border border-gray-600 text-sm sm:text-base text-gray-300 rounded-lg sm:rounded-xl hover:bg-gray-800 transition-colors duration-300"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-sm sm:text-base text-white font-semibold rounded-lg sm:rounded-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300"
+            >
+              {referralValid ? `Proceed - ₹${finalAmount}` : `Proceed - ₹${tournament.joining_fee}`}
+            </button>
+          </div>
+        </form>
       </div>
-      <p className="text-cyan-400 text-sm sm:text-base mt-1 sm:mt-2">
-        Complete your registration for {tournament.title}
-      </p>
     </div>
-
-    {/* Form */}
-    <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        {/* In-Game Nickname */}
-        <div>
-          <label className="block text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2">
-            In-Game Nickname *
-          </label>
-          <input
-            type="text"
-            required
-            value={formData.in_game_nickname}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, in_game_nickname: e.target.value }))
-            }
-            className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300"
-            placeholder="Enter your in-game name"
-          />
-        </div>
-
-        {/* Game UID */}
-        <div>
-          <label className="block text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2">
-            Game UID *
-          </label>
-          <input
-            type="text"
-            required
-            value={formData.game_uid}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, game_uid: e.target.value }))
-            }
-            className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300"
-            placeholder="Your game user ID"
-          />
-        </div>
-
-        {/* Mobile Number */}
-        <div>
-          <label className="block text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2">
-            Mobile Number *
-          </label>
-          <input
-            type="tel"
-            required
-            value={formData.mobile_number}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, mobile_number: e.target.value }))
-            }
-            className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300"
-            placeholder="+91 XXXXX XXXXX"
-          />
-        </div>
-
-        {/* Address */}
-        <div className="md:col-span-2">
-          <label className="block text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2">
-            Address *
-          </label>
-          <textarea
-            required
-            rows={2}
-            value={formData.address}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, address: e.target.value }))
-            }
-            className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:border-cyan-500 transition-colors duration-300 resize-none"
-            placeholder="Your complete address"
-          />
-        </div>
-      </div>
-
-      {/* Buttons */}
-      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-2 sm:pt-4">
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex-1 px-4 sm:px-6 py-2 sm:py-3 border border-gray-600 text-sm sm:text-base text-gray-300 rounded-lg sm:rounded-xl hover:bg-gray-800 transition-colors duration-300"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-sm sm:text-base text-white font-semibold rounded-lg sm:rounded-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300"
-        >
-          Proceed - ₹{tournament.joining_fee}
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-)
+  )
 }
 
-// Payment Modal Component
+// Payment Modal Component - COMPLETE UPDATED VERSION WITH REFERRAL
 const PaymentModal = ({ tournament, enrollmentData, onClose, onSuccess }) => {
   const [transactionId, setTransactionId] = useState('')
   const [loading, setLoading] = useState(false)
   const { user } = useAuth()
 
+  // Calculate final amount after referral discount
+  const calculateFinalAmount = () => {
+    const baseAmount = tournament.joining_fee
+    
+    // Apply 10% discount if referral code is valid
+    if (enrollmentData.referral_code && enrollmentData.referralValid) {
+      return baseAmount * 0.9 // 10% discount
+    }
+    
+    return baseAmount
+  }
+
   // Generate QR code data for UPI payment
   const generateQRCodeData = () => {
     const upiId = 'rushx@ptaxis'
-    const amount = tournament.joining_fee
+    const amount = calculateFinalAmount()
     const name = 'RushX Esports'
-    const note = `Tournament: ${tournament.title}`
+    const note = `Tournament: ${tournament.title}${enrollmentData.referral_code ? ` | Ref: ${enrollmentData.referral_code}` : ''}`
     
     return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amount}&tn=${encodeURIComponent(note)}`
   }
@@ -1178,24 +1316,70 @@ const PaymentModal = ({ tournament, enrollmentData, onClose, onSuccess }) => {
     setLoading(true)
 
     try {
+      // First, check if referral code is still valid
+      let referralData = null
+      if (enrollmentData.referral_code) {
+        const { data: referralCheck, error: referralError } = await supabase
+          .from('referral_codes')
+          .select('*')
+          .eq('code', enrollmentData.referral_code.toUpperCase())
+          .eq('is_active', true)
+          .single()
+
+        if (referralError) {
+          console.warn('Referral code no longer valid:', referralError)
+        } else {
+          referralData = referralCheck
+        }
+      }
+
+      // Calculate final amount with referral discount
+      const finalAmount = calculateFinalAmount()
+      const discountAmount = tournament.joining_fee - finalAmount
+
       // Create enrollment with pending status
-      const { data, error } = await supabase
+      const { data: enrollment, error } = await supabase
         .from('tournament_enrollments')
         .insert({
           tournament_id: tournament.id,
           user_id: user.id,
           transaction_id: transactionId,
-          payment_status: 'pending', // Set to pending for review
+          payment_status: 'pending',
           in_game_nickname: enrollmentData.in_game_nickname,
           game_uid: enrollmentData.game_uid,
           mobile_number: enrollmentData.mobile_number,
           address: enrollmentData.address,
-          team_id: null // Team ID will be assigned after verification
+          referral_code: enrollmentData.referral_code || null,
+          referral_discount: discountAmount > 0 ? discountAmount : null,
+          final_amount_paid: finalAmount,
+          team_id: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .select()
         .single()
 
       if (error) throw error
+
+      // Process referral if code was provided and valid
+      if (enrollmentData.referral_code && referralData) {
+        await processReferral(
+          enrollmentData.referral_code, 
+          user.id, 
+          tournament.id, 
+          enrollment.id,
+          finalAmount
+        )
+      }
+
+      // Update tournament participant count
+      await supabase
+        .from('tournaments')
+        .update({
+          current_participants: tournament.current_participants + 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', tournament.id)
 
       // Create notification for admin review
       await supabase
@@ -1203,9 +1387,10 @@ const PaymentModal = ({ tournament, enrollmentData, onClose, onSuccess }) => {
         .insert({
           user_id: user.id,
           title: 'Payment Verification Required',
-          message: `New enrollment for ${tournament.title}. UTR / UPI Ref ID : ${transactionId}`,
+          message: `New enrollment for ${tournament.title}. UTR: ${transactionId}${enrollmentData.referral_code ? ` | Referral: ${enrollmentData.referral_code}` : ''}`,
           type: 'warning',
-          related_tournament_id: tournament.id
+          related_tournament_id: tournament.id,
+          related_enrollment_id: enrollment.id
         })
 
       // Create notification for user
@@ -1213,170 +1398,322 @@ const PaymentModal = ({ tournament, enrollmentData, onClose, onSuccess }) => {
         .from('notifications')
         .insert({
           user_id: user.id,
-          title: 'Enrollment Submitted',
-          message: `Your enrollment for ${tournament.title} is under review. We will verify your payment and assign Team ID soon.`,
+          title: 'Enrollment Submitted Successfully',
+          message: `Your enrollment for ${tournament.title} is under review. We will verify your payment and assign Team ID within 24 hours.`,
           type: 'info',
-          related_tournament_id: tournament.id
+          related_tournament_id: tournament.id,
+          related_enrollment_id: enrollment.id
         })
+
+      // Notify referrer if referral was used
+      if (enrollmentData.referral_code && referralData) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: referralData.user_id,
+            title: 'Referral Used!',
+            message: `Your referral code was used by ${enrollmentData.in_game_nickname} for ${tournament.title}. You'll earn ₹${(tournament.joining_fee * 0.1).toFixed(0)} after payment verification.`,
+            type: 'success',
+            related_tournament_id: tournament.id
+          })
+      }
 
       onSuccess()
       onClose()
 
+      // Show success message
+      alert('Enrollment submitted successfully! Your payment is under verification. You will receive your Team ID within 24 hours.')
+
     } catch (error) {
       console.error('Payment submission error:', error)
+      alert('Error submitting enrollment: ' + error.message)
     } finally {
       setLoading(false)
     }
   }
 
+  // Process referral code usage - FIXED VERSION
+const processReferral = async (referralCode, userId, tournamentId, enrollmentId, finalAmount) => {
+  try {
+    // Get referrer_id from referral_codes table
+    const { data: codeData, error: codeError } = await supabase
+      .from('referral_codes')
+      .select('user_id, current_uses')
+      .eq('code', referralCode.toUpperCase())
+      .single()
+
+    if (codeError) throw codeError
+
+    // Record referral usage
+    const referralUsagePayload = {
+      referral_code: referralCode.toUpperCase(),
+      used_by: userId,
+      tournament_id: tournamentId,
+      enrollment_id: enrollmentId,
+      discount_applied: tournament.joining_fee - finalAmount,
+      referrer_id: codeData.user_id,
+      used_at: new Date().toISOString()
+    }
+
+    const { data: referralUsage, error: usageError } = await supabase
+      .from('referral_usage')
+      .insert(referralUsagePayload)
+      .select()
+      .single()
+
+    if (usageError) throw usageError
+
+    // Create pending referral earnings
+    const commissionAmount = tournament.joining_fee * 0.1 // 10% commission
+    
+    const { error: earningsError } = await supabase
+      .from('referral_earnings')
+      .insert({
+        referrer_id: codeData.user_id,
+        referral_usage_id: referralUsage.id,
+        amount: commissionAmount,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      })
+
+    if (earningsError) throw earningsError
+
+    // Update referral code usage count - FIXED: Use increment approach
+    const newUsesCount = (codeData.current_uses || 0) + 1
+    const { error: updateError } = await supabase
+      .from('referral_codes')
+      .update({
+        current_uses: newUsesCount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('code', referralCode.toUpperCase())
+
+    if (updateError) throw updateError
+
+    console.log(`Referral code ${referralCode} processed successfully. New uses count: ${newUsesCount}`)
+
+  } catch (error) {
+    console.error('Error processing referral:', error)
+    // Don't throw error here - we don't want referral processing to block enrollment
+  }
+}
+
+  const finalAmount = calculateFinalAmount()
+  const discountAmount = tournament.joining_fee - finalAmount
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
-  {/* Overlay */}
-  <div
-    className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-    onClick={onClose}
-  ></div>
+      {/* Overlay */}
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      ></div>
 
-  {/* Modal */}
-  <div className="relative bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl shadow-cyan-500/20 w-full max-w-4xl mx-2 sm:mx-4 my-6 sm:my-8 max-h-[90vh] overflow-y-auto">
-    {/* Header */}
-    <div className="p-3 sm:p-5 border-b border-cyan-500/20 sticky top-0 bg-gray-900/95 z-10">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg sm:text-xl font-bold text-white">Complete Payment</h2>
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-white transition-colors p-1"
-        >
-          <FaArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
-      </div>
-      <p className="text-cyan-400 text-xs sm:text-sm mt-1 sm:mt-2">
-        Pay entry fee to join {tournament.title}
-      </p>
-    </div>
-
-    {/* Content */}
-    <div className="p-3 sm:p-5">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* QR Code Section */}
-        <div className="text-center space-y-3 sm:space-y-4">
-          <div className="bg-white p-2 sm:p-5 rounded-2xl inline-block">
-            <div className="w-40 h-40 sm:w-60 sm:h-60 bg-white flex items-center justify-center rounded-lg border-2 border-gray-300">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(generateQRCodeData())}`}
-                alt="UPI Payment QR Code"
-                className="w-full h-full object-contain"
-              />
-            </div>
+      {/* Modal */}
+      <div className="relative bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl shadow-cyan-500/20 w-full max-w-4xl mx-2 sm:mx-4 my-6 sm:my-8 max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="p-3 sm:p-5 border-b border-cyan-500/20 sticky top-0 bg-gray-900/95 z-10">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg sm:text-xl font-bold text-white">Complete Payment</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition-colors p-1"
+            >
+              <FaArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
           </div>
-
-          <div className="space-y-2 sm:space-y-3">
-            <p className="text-gray-300 text-xs sm:text-sm">
-              Scan QR code to pay <span className="text-cyan-400 font-bold">₹{tournament.joining_fee}</span>
-            </p>
-
-            <div className="bg-cyan-500/20 border border-cyan-500/50 rounded-xl p-2 sm:p-3">
-              <p className="text-cyan-400 font-mono text-xs sm:text-sm break-all">
-                UPI ID: rushx@ptaxis
-              </p>
+          <p className="text-cyan-400 text-xs sm:text-sm mt-1 sm:mt-2">
+            Pay entry fee to join {tournament.title}
+          </p>
+          
+          {/* Referral Info */}
+          {enrollmentData.referral_code && enrollmentData.referralValid && (
+            <div className="flex items-center space-x-2 mt-2">
+              <FaGift className="w-3 h-3 text-green-400" />
+              <span className="text-green-400 text-xs">Referral code applied! 10% discount active.</span>
             </div>
-
-            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-2 sm:p-3">
-              <div className="flex items-center justify-center space-x-2 mb-1">
-                <IoMdAlert className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
-                <h4 className="text-yellow-400 font-semibold text-xs sm:text-sm">Manual Payment</h4>
-              </div>
-              <p className="text-yellow-300 text-xs sm:text-sm">
-                If QR doesn't work, send ₹{tournament.joining_fee} to rushx@ptaxis
-              </p>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Transaction Form */}
-        <div className="space-y-3 sm:space-y-4">
-          <form onSubmit={handlePaymentSubmit} className="space-y-3 sm:space-y-4">
-            <div>
-              <label className="block text-white font-semibold mb-1 text-xs sm:text-sm">
-                UTR / UPI Ref ID (12-digit code) *
-              </label>
-              <input
-                type="text"
-                required
-                value={transactionId}
-                onChange={(e) => setTransactionId(e.target.value)}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300 text-xs sm:text-sm"
-                placeholder="Enter UPI UTR / UPI Ref ID "
-              />
-              <p className="text-gray-400 text-xs mt-1">
-                After payment, you’ll get a UTR / UPI Ref ID (12-digit code) in your UPI app.
-              </p>
-            </div>
+        {/* Content */}
+        <div className="p-3 sm:p-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            {/* QR Code Section */}
+            <div className="text-center space-y-3 sm:space-y-4">
+              <div className="bg-white p-2 sm:p-5 rounded-2xl inline-block">
+                <div className="w-40 h-40 sm:w-60 sm:h-60 bg-white flex items-center justify-center rounded-lg border-2 border-gray-300">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(generateQRCodeData())}`}
+                    alt="UPI Payment QR Code"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </div>
 
-            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-2 sm:p-3">
-              <div className="flex items-start space-x-2 mb-1">
-                <IoMdAlert className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="text-yellow-400 font-semibold text-xs sm:text-sm mb-1">
-                    Important Instructions
-                  </h4>
-                  <ul className="text-yellow-300 text-xs sm:text-sm space-y-1">
-                    <li>• Payment must be done via UPI only</li>
-                    <li>• Save UTR / UPI Ref ID (12-digit code) for verification</li>
-                    <li>• Enrollment will be under review until payment verification</li>
-                    <li>• Team ID will be assigned after successful verification</li>
-                    <li>• No refunds after successful registration</li>
-                  </ul>
+              <div className="space-y-2 sm:space-y-3">
+                <p className="text-gray-300 text-xs sm:text-sm">
+                  Scan QR code to pay <span className="text-cyan-400 font-bold">₹{finalAmount}</span>
+                </p>
+
+                <div className="bg-cyan-500/20 border border-cyan-500/50 rounded-xl p-2 sm:p-3">
+                  <p className="text-cyan-400 font-mono text-xs sm:text-sm break-all">
+                    UPI ID: rushx@ptaxis
+                  </p>
+                </div>
+
+                <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-2 sm:p-3">
+                  <div className="flex items-center justify-center space-x-2 mb-1">
+                    <IoMdAlert className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
+                    <h4 className="text-yellow-400 font-semibold text-xs sm:text-sm">Manual Payment</h4>
+                  </div>
+                  <p className="text-yellow-300 text-xs sm:text-sm">
+                    If QR doesn't work, send ₹{finalAmount} to rushx@ptaxis
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 border border-gray-600 text-gray-300 rounded-xl hover:bg-gray-800 transition-colors duration-300 text-xs sm:text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 disabled:opacity-50 text-xs sm:text-sm"
-              >
-                {loading ? 'Processing...' : 'Submit Enrollment'}
-              </button>
-            </div>
-          </form>
+            {/* Transaction Form */}
+            <div className="space-y-3 sm:space-y-4">
+              <form onSubmit={handlePaymentSubmit} className="space-y-3 sm:space-y-4">
+                <div>
+                  <label className="block text-white font-semibold mb-1 text-xs sm:text-sm">
+                    UTR / UPI Ref ID (12-digit code) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={transactionId}
+                    onChange={(e) => setTransactionId(e.target.value)}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors duration-300 text-xs sm:text-sm"
+                    placeholder="Enter UPI UTR / UPI Ref ID"
+                    pattern="[A-Za-z0-9]{12}"
+                    title="Please enter 12-digit UTR/UPI Reference ID"
+                  />
+                  <p className="text-gray-400 text-xs mt-1">
+                    After payment, you'll get a UTR / UPI Ref ID (12-digit code) in your UPI app.
+                  </p>
+                </div>
 
-          {/* Payment Steps */}
-          <div className="bg-gray-800/50 rounded-xl p-3 sm:p-4 border border-gray-700/50">
-            <h4 className="text-white font-semibold text-xs sm:text-sm mb-2">Payment Steps:</h4>
-            <ol className="text-gray-300 text-xs sm:text-sm space-y-1">
-              <li className="flex items-start space-x-2">
-                <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">1</span>
-                <span>Scan QR code with any UPI app</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">2</span>
-                <span>Pay ₹{tournament.joining_fee} to RushX Esports</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">3</span>
-                <span>Copy UTR / UPI Ref ID (12-digit code) from payment receipt</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">4</span>
-                <span>Paste UTR / UPI Ref ID (12-digit code) and submit form</span>
-              </li>
-            </ol>
+                {/* Payment Summary */}
+                <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
+                  <h4 className="text-white font-semibold text-sm mb-3">Payment Summary</h4>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-sm">Entry Fee:</span>
+                      <span className="text-white font-semibold">₹{tournament.joining_fee}</span>
+                    </div>
+
+                    {enrollmentData.referral_code && enrollmentData.referralValid && (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400 text-sm">Referral Discount (10%):</span>
+                          <span className="text-green-400 font-semibold">-₹{discountAmount}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-green-400">
+                          <span>Using code: {enrollmentData.referral_code}</span>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="border-t border-gray-600 pt-2 mt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-white font-bold">Total Amount:</span>
+                        <span className="text-cyan-400 font-bold text-lg">₹{finalAmount}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Referral Benefits Info */}
+                {enrollmentData.referral_code && enrollmentData.referralValid && (
+                  <div className="bg-green-500/20 border border-green-500/50 rounded-xl p-3">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <FaGift className="w-4 h-4 text-green-400" />
+                      <h4 className="text-green-400 font-semibold text-sm">Referral Benefits Applied</h4>
+                    </div>
+                    <div className="text-green-300 text-xs space-y-1">
+                      <p>• You saved ₹{discountAmount} with referral discount</p>
+                      <p>• Referrer will earn 10% commission after payment verification</p>
+                      <p>• Both parties benefit from this referral</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-2 sm:p-3">
+                  <div className="flex items-start space-x-2 mb-1">
+                    <IoMdAlert className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="text-yellow-400 font-semibold text-xs sm:text-sm mb-1">
+                        Important Instructions
+                      </h4>
+                      <ul className="text-yellow-300 text-xs sm:text-sm space-y-1">
+                        <li>• Payment must be done via UPI only</li>
+                        <li>• Save UTR / UPI Ref ID (12-digit code) for verification</li>
+                        <li>• Enrollment will be under review until payment verification</li>
+                        <li>• Team ID will be assigned after successful verification</li>
+                        <li>• No refunds after successful registration</li>
+                        {enrollmentData.referral_code && (
+                          <li>• Referral discount is applied only once per tournament</li>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 px-4 sm:px-6 py-2 sm:py-3 border border-gray-600 text-gray-300 rounded-xl hover:bg-gray-800 transition-colors duration-300 text-xs sm:text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 disabled:opacity-50 text-xs sm:text-sm"
+                  >
+                    {loading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        <span>Processing...</span>
+                      </div>
+                    ) : (
+                      `Submit Enrollment - ₹${finalAmount}`
+                    )}
+                  </button>
+                </div>
+              </form>
+
+              {/* Payment Steps */}
+              <div className="bg-gray-800/50 rounded-xl p-3 sm:p-4 border border-gray-700/50">
+                <h4 className="text-white font-semibold text-xs sm:text-sm mb-2">Payment Steps:</h4>
+                <ol className="text-gray-300 text-xs sm:text-sm space-y-1">
+                  <li className="flex items-start space-x-2">
+                    <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">1</span>
+                    <span>Scan QR code with any UPI app</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">2</span>
+                    <span>Pay ₹{finalAmount} to RushX Esports</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">3</span>
+                    <span>Copy UTR / UPI Ref ID (12-digit code) from payment receipt</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">4</span>
+                    <span>Paste UTR / UPI Ref ID and submit form</span>
+                  </li>
+                </ol>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
-
   )
 }
 

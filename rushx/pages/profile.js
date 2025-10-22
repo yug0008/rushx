@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+
 import { 
   FaUser, 
-  FaGamepad, 
+  FaGamepad, FaGift,
   FaTrophy, 
   FaUsers, 
   FaCalendarAlt,
@@ -562,7 +563,23 @@ const ProfilePage = () => {
                 </div>
               </div>
             )}
-
+{/* Referral Program */}
+<div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 rounded-2xl border border-purple-500/30 p-6">
+  <h3 className="text-lg font-bold text-white mb-4 flex items-center space-x-2">
+    <FaGift className="w-5 h-5 text-purple-400" />
+    <span>Referral Program</span>
+  </h3>
+  <p className="text-gray-300 text-sm mb-4">
+    Earn 10% commission when friends use your code. They get 10% OFF too!
+  </p>
+  <button
+    onClick={() => router.push('/myreferral')}
+    className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-cyan-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300"
+  >
+    <FaGift className="w-4 h-4" />
+    <span>Your Referrals</span>
+  </button>
+</div>
             {/* Account Information */}
             <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
               <h3 className="text-lg font-bold text-white mb-4">Account Information</h3>
