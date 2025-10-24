@@ -14,7 +14,8 @@ import {
   FaCalendarAlt,
   FaHome,
   FaBars,
-  FaBell
+  FaBell,
+  FaGift
 } from 'react-icons/fa';
 import { GiTrophyCup } from 'react-icons/gi';
 import { IoMdClose } from 'react-icons/io';
@@ -151,7 +152,6 @@ const Header = () => {
   const navItems = [
     { name: 'Home', href: '/', icon: <FaHome className="w-3 h-3" /> },
     { name: 'Tournaments', href: '/tournaments', icon: <GiTrophyCup className="w-3 h-3" /> },
-    
     { name: 'Players', href: '/players', icon: <FaCrown className="w-3 h-3" /> },
     { name: 'Schedule', href: '/schedule', icon: <FaCalendarAlt className="w-3 h-3" /> },
     { name: 'Results', href: '/results', icon: <FaTrophy className="w-3 h-3" /> },
@@ -167,17 +167,28 @@ const Header = () => {
     router.push('/');
   };
 
+  // Get user initial for avatar
+  const getUserInitial = () => {
+    if (user?.user_metadata?.username) {
+      return user.user_metadata.username.charAt(0).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
+
   return (
     <>
       <header className={`fixed w-full z-50 transition-all duration-500 ${
         isScrolled 
-          ? 'bg-gray-900/95 backdrop-blur-xl border-b border-cyan-500/20' 
+          ? 'bg-gray-900/95 backdrop-blur-xl border-b border-cyan-500/20 shadow-2xl shadow-cyan-500/10' 
           : 'bg-gradient-to-b from-gray-900 to-transparent'
       }`}>
         <div className="container mx-auto px-3">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2 group">
+            <Link href="/" className="flex items-center space-x-2 group flex-shrink-0">
               <div className="relative">
                 <div className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-xl transform group-hover:rotate-12 transition-transform duration-300 shadow-lg shadow-cyan-500/25 flex items-center justify-center">
                   <GiTrophyCup className="w-5 h-5 text-white" />
@@ -210,121 +221,148 @@ const Header = () => {
               ))}
             </nav>
 
-            {/* Auth + Notifications */}
+            {/* Desktop Auth + Notifications */}
             <div className="hidden lg:flex items-center space-x-3">
-              {user && (
-                <div className="relative">
-                  {/* Notification Bell */}
-                  <button
-                    onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative p-2 text-gray-300 hover:text-cyan-400 transition-colors duration-300"
+              {user ? (
+                <>
+                  {/* Referral Gift Icon */}
+                  <Link
+                    href="/myreferral"
+                    className="relative p-2 text-gray-300 hover:text-cyan-400 transition-all duration-300 group"
                   >
-                    <FaBell className="w-5 h-5" />
-                    {notifications.length > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                        {notifications.length}
-                      </span>
-                    )}
-                  </button>
+                    <div className="relative">
+                      <FaGift className="w-5 h-5 transform group-hover:scale-110 transition-transform duration-300" />
+                      <div className="absolute -inset-1 bg-cyan-500/20 rounded-full blur-sm group-hover:bg-cyan-500/30 transition-all duration-300"></div>
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+                  </Link>
 
-                  {/* Notifications Dropdown */}
-                  {showNotifications && (
-                    <div className="absolute top-full right-0 mt-2 w-80 bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-xl shadow-2xl shadow-cyan-500/20 overflow-hidden z-50">
-                      <div className="p-4 border-b border-cyan-500/20 flex items-center justify-between">
-                        <h3 className="text-white font-semibold">Notifications</h3>
-                        <div className="flex items-center space-x-2">
-                          {notifications.length > 0 && (
-                            <button
-                              onClick={markAllAsRead}
+                  {/* Notification Bell */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowNotifications(!showNotifications)}
+                      className="relative p-2 text-gray-300 hover:text-cyan-400 transition-all duration-300 group"
+                    >
+                      <div className="relative">
+                        <FaBell className="w-5 h-5 transform group-hover:scale-110 transition-transform duration-300" />
+                        <div className="absolute -inset-1 bg-cyan-500/20 rounded-full blur-sm group-hover:bg-cyan-500/30 transition-all duration-300"></div>
+                      </div>
+                      {notifications.length > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center border-2 border-gray-900 shadow-lg">
+                          {notifications.length}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Notifications Dropdown */}
+                    {showNotifications && (
+                      <div className="absolute top-full right-0 mt-2 w-80 bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-xl shadow-2xl shadow-cyan-500/20 overflow-hidden z-50">
+                        <div className="p-4 border-b border-cyan-500/20 flex items-center justify-between">
+                          <h3 className="text-white font-semibold">Notifications</h3>
+                          <div className="flex items-center space-x-2">
+                            {notifications.length > 0 && (
+                              <button
+                                onClick={markAllAsRead}
+                                className="text-cyan-400 text-sm hover:text-cyan-300 transition-colors"
+                              >
+                                Mark All Read
+                              </button>
+                            )}
+                            <Link 
+                              href="/notifications"
                               className="text-cyan-400 text-sm hover:text-cyan-300 transition-colors"
+                              onClick={() => setShowNotifications(false)}
                             >
-                              Mark All Read
-                            </button>
+                              View All
+                            </Link>
+                          </div>
+                        </div>
+                        <div className="max-h-96 overflow-y-auto">
+                          {isLoading ? (
+                            <div className="p-4 text-center text-gray-400">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-500 mx-auto"></div>
+                              <p className="mt-2">Loading notifications...</p>
+                            </div>
+                          ) : notifications.length === 0 ? (
+                            <div className="p-4 text-center text-gray-400">
+                              No new notifications
+                            </div>
+                          ) : (
+                            notifications.map(notification => (
+                              <div 
+                                key={notification.id} 
+                                className="p-4 border-b border-gray-700/50 hover:bg-gray-800/50 transition-colors duration-300 cursor-pointer group"
+                                onClick={() => markAsRead(notification.id)}
+                              >
+                                <div className="text-white font-medium text-sm mb-1 group-hover:text-cyan-300 transition-colors">
+                                  {notification.title}
+                                </div>
+                                <div className="text-gray-400 text-xs">
+                                  {notification.message}
+                                </div>
+                                <div className="text-gray-500 text-xs mt-2">
+                                  {new Date(notification.created_at).toLocaleDateString()}
+                                </div>
+                              </div>
+                            ))
                           )}
-                          <Link 
-                            href="/notifications"
-                            className="text-cyan-400 text-sm hover:text-cyan-300 transition-colors"
-                            onClick={() => setShowNotifications(false)}
-                          >
-                            View All
-                          </Link>
                         </div>
                       </div>
-                      <div className="max-h-96 overflow-y-auto">
-                        {isLoading ? (
-                          <div className="p-4 text-center text-gray-400">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-500 mx-auto"></div>
-                            <p className="mt-2">Loading notifications...</p>
-                          </div>
-                        ) : notifications.length === 0 ? (
-                          <div className="p-4 text-center text-gray-400">
-                            No new notifications
-                          </div>
-                        ) : (
-                          notifications.map(notification => (
-                            <div 
-                              key={notification.id} 
-                              className="p-4 border-b border-gray-700/50 hover:bg-gray-800/50 transition-colors duration-300 cursor-pointer"
-                              onClick={() => markAsRead(notification.id)}
-                            >
-                              <div className="text-white font-medium text-sm mb-1">
-                                {notification.title}
-                              </div>
-                              <div className="text-gray-400 text-xs">
-                                {notification.message}
-                              </div>
-                              <div className="text-gray-500 text-xs mt-2">
-                                {new Date(notification.created_at).toLocaleDateString()}
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                  </div>
 
-              {/* Profile / Auth Buttons */}
-              {user ? (
-                <div className="relative">
-                  <button
-                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium rounded-lg hover:shadow-lg hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300"
-                  >
-                    <FaUser className="w-3 h-3" />
-                    <span>Profile</span>
-                  </button>
-
-                  {/* Profile Dropdown */}
-                  {isProfileDropdownOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-xl shadow-2xl shadow-cyan-500/20 overflow-hidden">
-                      <div className="p-4 border-b border-cyan-500/20">
-                        <p className="text-white font-semibold text-sm">
-                          {user.user_metadata?.username || user.email}
-                        </p>
-                        <p className="text-cyan-400 text-xs">
-                          {user.user_metadata?.gamer_tag || 'Player'}
-                        </p>
+                  {/* User Avatar with Dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                      className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium rounded-lg hover:shadow-lg hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300 group"
+                    >
+                      <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold">
+                        {getUserInitial()}
                       </div>
-                      <Link
-                        href="/profile"
-                        className="flex items-center space-x-2 px-4 py-3 text-gray-300 hover:text-white hover:bg-cyan-500/10 transition-colors duration-300"
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                      >
-                        <FaUser className="w-4 h-4" />
-                        <span>My Profile</span>
-                      </Link>
-                      <button
-                        onClick={handleSignOut}
-                        className="flex items-center space-x-2 w-full px-4 py-3 text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-colors duration-300"
-                      >
-                        <FaSignOutAlt className="w-4 h-4" />
-                        <span>Sign Out</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
+                      <span>Profile</span>
+                    </button>
+
+  {/* Profile Dropdown */}
+{isProfileDropdownOpen && (
+  <div className="absolute top-full right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-xl shadow-2xl shadow-cyan-500/20 overflow-hidden z-50">
+    <div className="p-4 border-b border-cyan-500/20">
+      <p className="text-white font-semibold text-sm truncate">
+        {user.user_metadata?.username || user.email}
+      </p>
+      <p className="text-cyan-400 text-xs truncate">
+        {user.user_metadata?.gamer_tag || 'Player'}
+      </p>
+    </div>
+    <div className="py-1">
+      <Link
+        href="/profile"
+        className="flex items-center space-x-2 px-4 py-3 text-gray-300 hover:text-white hover:bg-cyan-500/10 transition-all duration-300 group"
+        onClick={() => setIsProfileDropdownOpen(false)}
+      >
+        <FaUser className="w-4 h-4 group-hover:scale-110 transition-transform" />
+        <span>My Profile</span>
+      </Link>
+      <Link
+        href="/myreferral"
+        className="flex items-center space-x-2 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-cyan-500/10 transition-all duration-300 group"
+        onClick={() => setIsProfileDropdownOpen(false)}
+      >
+        <FaGift className="w-4 h-4 group-hover:scale-110 transition-transform" />
+        <span>My Referrals</span>
+      </Link>
+      <button
+        onClick={handleSignOut}
+        className="flex items-center space-x-2 w-full px-4 py-3 text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 group border-t border-gray-700/50 mt-1"
+      >
+        <FaSignOutAlt className="w-4 h-4 group-hover:scale-110 transition-transform" />
+        <span>Sign Out</span>
+      </button>
+    </div>
+  </div>
+)}
+                  </div>
+                </>
               ) : (
                 <button 
                   onClick={() => setIsAuthModalOpen(true)}
@@ -336,25 +374,56 @@ const Header = () => {
               )}
             </div>
 
-            {/* Mobile Menu Button + Notifications */}
-            <div className="lg:hidden flex items-center space-x-2">
-              {user && (
-                <div className="relative">
-                  <button
-                    onClick={() => setShowMobileNotifications(!showMobileNotifications)}
-                    className="relative p-2 text-white hover:text-cyan-400 transition-colors duration-300"
+            {/* Mobile Header Right Section */}
+            <div className="lg:hidden flex items-center space-x-3">
+              {user ? (
+                <>
+                  {/* Mobile Gift Icon */}
+                  <Link
+                    href="/myreferral"
+                    className="relative p-2 text-white hover:text-cyan-400 transition-all duration-300"
                   >
-                    <FaBell className="w-5 h-5" />
-                    {notifications.length > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                        {notifications.length}
-                      </span>
-                    )}
-                  </button>
-                </div>
+                    <FaGift className="w-5 h-5" />
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+                  </Link>
+
+                  {/* Mobile Notification Bell */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowMobileNotifications(!showMobileNotifications)}
+                      className="relative p-2 text-white hover:text-cyan-400 transition-all duration-300"
+                    >
+                      <FaBell className="w-5 h-5" />
+                      {notifications.length > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center border-2 border-gray-900">
+                          {notifications.length}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Mobile User Avatar */}
+                  <Link
+                    href="/profile"
+                    className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-full text-xs hover:shadow-lg hover:shadow-cyan-500/25 transform hover:scale-110 transition-all duration-300"
+                  >
+                    {getUserInitial()}
+                  </Link>
+                </>
+              ) : (
+                /* Mobile Sign In Button */
+                <button 
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium rounded-lg text-xs hover:shadow-lg hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300"
+                >
+                  <FaUser className="w-2.5 h-2.5" />
+                  <span>Sign In</span>
+                </button>
               )}
+
+              {/* Mobile Menu Button */}
               <button
-                className="flex items-center justify-center w-8 h-8 text-white hover:text-cyan-400 transition-colors duration-300"
+                className="flex items-center justify-center w-8 h-8 text-white hover:text-cyan-400 transition-all duration-300 hover:bg-cyan-500/10 rounded-lg"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
                 {isMobileMenuOpen ? (
@@ -427,8 +496,8 @@ const Header = () => {
           )}
 
           {/* Mobile Menu */}
-          <div className={`lg:hidden transition-all bg-gray-900/95 duration-500 overflow-hidden ${
-            isMobileMenuOpen ? 'max-h-96 pb-4' : 'max-h-0'
+          <div className={`lg:hidden transition-all  bg-gray-900/95 duration-500 overflow-hidden ${
+            isMobileMenuOpen ? 'max-h-120 pb-4' : 'max-h-0'
           }`}>
             <nav className="flex flex-col space-y-3">
               {navItems.map((item) => (
@@ -446,35 +515,45 @@ const Header = () => {
                   <span>{item.name}</span>
                 </Link>
               ))}
-              <div className="flex space-x-3 pt-3">
+              
+              {/* Mobile Auth Section */}
+              <div className="pt-3 border-t border-cyan-500/20">
                 {user ? (
-                  <>
+                  <div className="flex flex-col space-y-2">
                     <Link
                       href="/profile"
-                      className="flex items-center justify-center space-x-1.5 flex-1 px-3 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium rounded-lg text-sm"
+                      className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium rounded-lg text-sm"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <FaUser className="w-3 h-3" />
-                      <span>Profile</span>
+                      <span>My Profile</span>
+                    </Link>
+                    <Link
+                      href="/myreferral"
+                      className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-cyan-500/20 to-purple-600/20 text-cyan-400 font-medium rounded-lg text-sm border border-cyan-500/30"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <FaGift className="w-3 h-3" />
+                      <span>My Referrals</span>
                     </Link>
                     <button
                       onClick={handleSignOut}
-                      className="flex items-center justify-center space-x-1.5 flex-1 px-3 py-2 border border-red-500 text-red-400 font-medium rounded-lg text-sm"
+                      className="flex items-center space-x-2 px-3 py-2 border border-red-500 text-red-400 font-medium rounded-lg text-sm"
                     >
                       <FaSignOutAlt className="w-3 h-3" />
                       <span>Sign Out</span>
                     </button>
-                  </>
+                  </div>
                 ) : (
                   <button 
                     onClick={() => {
                       setIsAuthModalOpen(true)
                       setIsMobileMenuOpen(false)
                     }}
-                    className="flex items-center justify-center space-x-1.5 flex-1 px-3 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium rounded-lg text-sm"
+                    className="flex items-center justify-center space-x-1.5 w-full px-3 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium rounded-lg text-sm"
                   >
                     <FaUser className="w-3 h-3" />
-                    <span>Sign In</span>
+                    <span>Sign In to RUSHX ESPORTS</span>
                   </button>
                 )}
               </div>
